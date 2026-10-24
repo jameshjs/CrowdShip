@@ -8,7 +8,7 @@ export const POST = route<RoomCtx>(async (req, ctx) => {
   const started = performance.now();
   assertSameOrigin(req);
   const code = await roomCode(ctx);
-  await rateLimit(`join:${clientIp(req)}`, 30, 60);
+  await rateLimit(`join:${clientIp(req)}`, 400, 60) // venue Wi-Fi: many phones share one IP;
   const input = await parseJson(req, joinInput);
   const room = await getRoomByCode(code);
   if (room.status !== "active") throw new AppError(410, "room_closed", "This session has ended");

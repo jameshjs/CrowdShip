@@ -100,10 +100,7 @@ export async function castVote(room: RoomRef, participantId: string, roundId: st
       await sql`insert into activity_events (room_id, event_type, public_payload)
         values (${room.id}, 'vote_cast', ${sql.json({ nickname: who?.nickname ?? "Someone", title: p?.title ?? "" })})`;
     }
-    await broadcast(sql, room.code, BROADCAST_EVENTS.votes, {
-      roundId,
-      tallies: Object.fromEntries(tallies.map((t) => [t.proposal_id, t.votes])),
-    });
+    await broadcast(sql, room.code, BROADCAST_EVENTS.votes, { roundId });
     return { voteId: vote!.id, changed: vote!.changed, tallies };
   });
 }

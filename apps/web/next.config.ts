@@ -4,6 +4,7 @@ const config: NextConfig = {
   transpilePackages: ["@crowdship/db", "@crowdship/shared", "@crowdship/ai", "@crowdship/integrations"],
   serverExternalPackages: ["postgres"],
   poweredByHeader: false,
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
   devIndicators: false,
   async headers() {
     return [

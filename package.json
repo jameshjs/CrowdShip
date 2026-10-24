@@ -20,6 +20,7 @@
     "@crowdship/integrations": "workspace:*",
     "@crowdship/shared": "workspace:*",
     "@playwright/test": "1.64.1",
+    "@supabase/supabase-js": "2.118.0",
     "@types/node": "^24.0.0",
     "postgres": "3.4.9",
     "supabase": "2.122.0",

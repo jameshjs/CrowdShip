@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 export const GET = route<RoomCtx>(async (req, ctx) => {
   const code = await roomCode(ctx);
-  await rateLimit(`rt:${clientIp(req)}`, 60, 60);
+  await rateLimit(`rt:${clientIp(req)}`, 1000, 60);
   const room = await getRoomByCode(code);
   const gsid = await readGuestSessionId();
   const participant = gsid ? await getParticipant(room.id, gsid) : null;

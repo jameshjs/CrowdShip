@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createClient, type RealtimeChannel, type SupabaseClient } from "@supabase/supabase-js";
-import { BROADCAST_EVENTS, type PublicActivity, type PublicRoomState } from "@crowdship/shared";
+import { BROADCAST_EVENTS, type PublicRoomState } from "@crowdship/shared";
 import { api } from "./api";
 
 export type RoomStateWithMe = PublicRoomState & {
@@ -34,7 +34,6 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
   const [error, setError] = useState<string | null>(null);
   const [online, setOnline] = useState<number | null>(null);
   const [status, setStatus] = useState<ConnectionStatus>("connecting");
-  const [flash, setFlash] = useState<PublicActivity | null>(null);
   const clockOffset = useRef(0);
   const refetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inflight = useRef(false);
@@ -160,7 +159,6 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
       })
         .on("broadcast", { event: BROADCAST_EVENTS.activity }, ({ payload }) => {
           sampleLatency(payload.sentAt);
-          setFlash(payload as PublicActivity);
           scheduleRefetch();
         })
         .on("broadcast", { event: BROADCAST_EVENTS.stateChanged }, ({ payload }) => {
@@ -205,5 +203,5 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
 
   const serverNow = useCallback(() => Date.now() + clockOffset.current, []);
 
-  return { state, setState, error, online, status, refetch, flash, serverNow };
+  return { state, setState, error, online, status, refetch, serverNow };
 }

@@ -1,5 +1,5 @@
 import { hostname } from "node:os";
-import { closeDb, pruneRateLimits, recoverStaleJobs } from "@crowdship/db";
+import { closeDb, db, flushOutbox, pruneRateLimits, recoverStaleJobs } from "@crowdship/db";
 import { QUEUES, type QueueName } from "@crowdship/shared";
 import { configuredTriageProvider } from "@crowdship/ai";
 import { log } from "./log";
@@ -47,6 +47,19 @@ async function main() {
     }
   }, 30_000);
 
+  // Realtime flusher: coalesced broadcast hints, ~3/s per room per event type at most.
+  const FLUSH_MS = Number(process.env.REALTIME_FLUSH_MS ?? 300);
+  const flusher = (async () => {
+    while (!stopping) {
+      try {
+        await flushOutbox(db());
+      } catch (err) {
+        log("error", "realtime flush failed", { err: String(err) });
+      }
+      await new Promise((r) => setTimeout(r, FLUSH_MS));
+    }
+  })();
+
   const lanes = LANES.flatMap((l) => Array.from({ length: l.concurrency }, (_, i) => lane(l.queues, i)));
 
   const shutdown = async (signal: string) => {
@@ -60,7 +73,7 @@ async function main() {
   };
   process.on("SIGINT", () => void shutdown("SIGINT"));
   process.on("SIGTERM", () => void shutdown("SIGTERM"));
-  await Promise.all(lanes);
+  await Promise.all([...lanes, flusher]);
 }
 
 main().catch((err) => {

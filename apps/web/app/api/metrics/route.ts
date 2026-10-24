@@ -12,7 +12,7 @@ const input = z.object({
 /** Client-observed timings (sampled). Clock offset is corrected client-side using serverTime from /state. */
 export const POST = route(async (req) => {
   assertSameOrigin(req);
-  await rateLimit(`metric:${clientIp(req)}`, 30, 60);
+  await rateLimit(`metric:${clientIp(req)}`, 500, 60);
   const m = await parseJson(req, input);
   const room = await getRoomByCode(m.room);
   await recordMetric(m.name, { ms: m.ms }, { source: "client" }, room.id);

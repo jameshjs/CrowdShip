@@ -12,3 +12,4 @@ dist
 coverage
 apps/demo-app/node_modules
 apps/demo-app/dist
+.next-build
