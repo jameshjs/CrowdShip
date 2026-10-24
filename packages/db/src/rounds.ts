@@ -137,7 +137,7 @@ export async function closeVoting(room: RoomRef, opts: { onlyIfExpired?: boolean
       const [p] = await sql<{ title: string }[]>`select title from proposals where id = ${winner}`;
       await activity(sql, room, "voting_closed", { roundNumber: round.number, winnerId: winner, title: p!.title, votes: top!.votes });
     } else {
-      await activity(sql, room, "voting_closed", { roundNumber: round.number, winnerId: null, tie: tied.length > 1 });
+      await activity(sql, room, "voting_closed", { roundNumber: round.number, winnerId: null, tie: Boolean(top && top.votes > 0 && tied.length > 1) });
     }
     return { winner, tallies };
   });

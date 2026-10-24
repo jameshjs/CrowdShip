@@ -178,6 +178,12 @@ importers:
         specifier: ^24.19.2
         version: 24.19.2
 
+  packages/feedback-widget:
+    devDependencies:
+      esbuild:
+        specifier: ^0.28.2
+        version: 0.28.2
+
   packages/integrations:
     dependencies:
       '@crowdship/shared':

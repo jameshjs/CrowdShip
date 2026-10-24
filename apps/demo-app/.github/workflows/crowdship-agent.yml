@@ -1,0 +1,82 @@
+name: crowdship-agent
+run-name: CrowdShip agent ${{ inputs.crowdship_tag }}
+
+# Dispatched only by CrowdShip (workflow_dispatch requires write access).
+# Never triggered by issues, comments or pull requests from the public.
+on:
+  workflow_dispatch:
+    inputs:
+      crowdship_tag: { description: "CrowdShip idempotency tag", required: true, type: string }
+      branch: { description: "Branch to push", required: true, type: string }
+      issue_number: { description: "Issue to close", required: false, type: string }
+      task: { description: "Coding specification", required: true, type: string }
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: crowdship-agent
+  cancel-in-progress: false
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+
+      - name: Validate inputs
+        env:
+          BRANCH: ${{ inputs.branch }}
+          TAG: ${{ inputs.crowdship_tag }}
+        run: |
+          [[ "$BRANCH" =~ ^crowdship/cs-[a-f0-9-]{36}$ ]] || { echo "bad branch"; exit 1; }
+          [[ "$TAG" =~ ^cs-[a-f0-9-]{36}$ ]] || { echo "bad tag"; exit 1; }
+          git switch -c "$BRANCH"
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Claude Code implements the task
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            ${{ inputs.task }}
+
+            Environment note: you are running inside GitHub Actions on branch ${{ inputs.branch }}.
+            Edit files only. Do not run git or gh commands; the workflow commits your changes and opens the draft PR.
+          claude_args: >-
+            --model claude-opus-5-5
+            --max-turns 60
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(npm run typecheck),Bash(npm test),Bash(npm run test:e2e),Bash(npm run build),Bash(npx vitest:*),Bash(npx playwright test:*),Bash(ls:*),Bash(cat:*)"
+
+      - name: Commit and open draft PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ inputs.branch }}
+          TAG: ${{ inputs.crowdship_tag }}
+          ISSUE: ${{ inputs.issue_number }}
+        run: |
+          # Agent output may not touch CI, workflows or deployment config.
+          git checkout -- .github 2>/dev/null || true
+          git clean -fdq -- .github || true
+          git rm -r --cached --ignore-unmatch -q node_modules test-results playwright-report || true
+          if git diff --quiet && [ -z "$(git ls-files --others --exclude-standard)" ]; then
+            echo "Agent made no changes"; exit 1
+          fi
+          git config user.name "crowdship-agent"
+          git config user.email "crowdship-agent@users.noreply.github.com"
+          git add -A
+          git commit -qm "CrowdShip: implement ${TAG}"
+          git push -u origin "$BRANCH"
+          BODY="Implemented by Claude Code via CrowdShip.
+
+          Closes #${ISSUE}
+
+          CrowdShip: ${TAG}"
+          gh pr create --draft --base main --head "$BRANCH" --title "$(git log -1 --pretty=%s)" --body "$BODY"

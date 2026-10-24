@@ -10,3 +10,5 @@ supabase/.branches
 .turbo
 dist
 coverage
+apps/demo-app/node_modules
+apps/demo-app/dist
