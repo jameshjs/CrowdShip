@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Check, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,9 @@ export default function VotePage() {
   const { state, setState, code, serverNow, refetch } = useRoomCtx();
   const now = useNow(1000, serverNow);
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<string | null>(null);
+  // Votes are sent one at a time, in tap order, so the server ends on the last choice.
+  const chain = useRef<Promise<void>>(Promise.resolve());
+  const inflight = useRef(0);
   if (!state) return <p className="text-fg-muted">Loading…</p>;
 
   const round = state.round;
@@ -22,12 +24,10 @@ export default function VotePage() {
   const total = ballot.reduce((n, p) => n + p.votes, 0);
   const myVote = state.me?.vote ?? null;
 
-  async function vote(proposalId: string) {
-    if (!round || !open || proposalId === myVote || pending) return;
+  function vote(proposalId: string) {
+    if (!round || !open || proposalId === myVote) return;
     setError(null);
-    setPending(proposalId);
-    const snapshot = state;
-    // Optimistic: move my vote, adjust counts locally.
+    // Optimistic: move my vote and adjust counts locally right away.
     setState((s) =>
       s && {
         ...s,
@@ -37,16 +37,22 @@ export default function VotePage() {
         ),
       },
     );
-    try {
-      const res = await api<{ tallies: Record<string, number> }>(`/api/rooms/${code}/vote`, { roundId: round.id, proposalId });
-      setState((s) => s && { ...s, proposals: s.proposals.map((p) => (p.id in res.tallies ? { ...p, votes: res.tallies[p.id]! } : p)) });
-    } catch (e) {
-      setState(snapshot); // rollback
-      setError(e instanceof ApiError ? e.message : "Vote failed, please try again");
-      void refetch();
-    } finally {
-      setPending(null);
-    }
+    inflight.current++;
+    const roundId = round.id;
+    chain.current = chain.current.then(async () => {
+      try {
+        const res = await api<{ tallies: Record<string, number> }>(`/api/rooms/${code}/vote`, { roundId, proposalId });
+        // Only the latest request's tallies reflect what the user sees.
+        if (inflight.current === 1) {
+          setState((s) => s && { ...s, proposals: s.proposals.map((p) => (p.id in res.tallies ? { ...p, votes: res.tallies[p.id]! } : p)) });
+        }
+      } catch (e) {
+        setError(e instanceof ApiError ? e.message : "Vote failed, please try again");
+        await refetch(); // roll back to canonical server state
+      } finally {
+        inflight.current--;
+      }
+    });
   }
 
   if (!round || round.proposalIds.length === 0 || round.status === "collecting" || round.status === "triaging") {

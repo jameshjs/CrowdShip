@@ -3,10 +3,15 @@ import { request, type APIRequestContext } from "@playwright/test";
 const BASE = process.env.E2E_BASE_URL ?? "http://localhost:3000";
 const PASSWORD = process.env.ORGANIZER_PASSWORD ?? "crowdship-local";
 
+// Log in once per test process: the login endpoint is rate limited (10 per 5 min per IP).
+let session: Awaited<ReturnType<APIRequestContext["storageState"]>> | null = null;
+
 export async function organizer(): Promise<APIRequestContext> {
+  if (session) return request.newContext({ baseURL: BASE, extraHTTPHeaders: { Origin: BASE }, storageState: session });
   const ctx = await request.newContext({ baseURL: BASE, extraHTTPHeaders: { Origin: BASE } });
   const res = await ctx.post("/api/admin/login", { data: { password: PASSWORD } });
   if (!res.ok()) throw new Error(`organizer login failed: ${res.status()}`);
+  session = await ctx.storageState();
   return ctx;
 }
 
