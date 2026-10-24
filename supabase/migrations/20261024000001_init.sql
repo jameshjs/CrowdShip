@@ -201,6 +201,8 @@ create table verification_results (
   test_status check_status not null default 'pending',
   ci_status check_status not null default 'pending',
   checks_json jsonb not null default '[]'::jsonb,
+  simulated boolean not null default false,
+  ci_dispatched_at timestamptz,
   verified_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),

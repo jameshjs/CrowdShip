@@ -67,19 +67,26 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
 
   const scheduleRefetch = useCallback(() => {
     if (refetchTimer.current) clearTimeout(refetchTimer.current);
-    refetchTimer.current = setTimeout(() => void refetch(), 120);
+    refetchTimer.current = setTimeout(() => {
+      refetchTimer.current = null;
+      void refetch();
+    }, 120);
   }, [refetch]);
 
   useEffect(() => {
     void refetch();
-    const poll = setInterval(() => void refetch(), 30_000);
     const onVisible = () => document.visibilityState === "visible" && void refetch();
     document.addEventListener("visibilitychange", onVisible);
     return () => {
-      clearInterval(poll);
       document.removeEventListener("visibilitychange", onVisible);
     };
   }, [refetch]);
+
+  // Fallback polling: slow when live, fast while disconnected.
+  useEffect(() => {
+    const t = setInterval(() => void refetch(), status === "live" ? 30_000 : 5_000);
+    return () => clearInterval(t);
+  }, [refetch, status]);
 
   useEffect(() => {
     const sb = getSupabase();
@@ -89,7 +96,10 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
     }
     let channel: RealtimeChannel | null = null;
     let cancelled = false;
+    let attempt = 0;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let tokenTimer: ReturnType<typeof setInterval> | null = null;
+    const presenceKeyFallback = `viewer-${crypto.randomUUID()}`;
 
     const sampleLatency = (sentAt: unknown) => {
       if (typeof sentAt !== "number" || latencySamples.current >= 5 || Math.random() > 0.3) return;
@@ -100,29 +110,54 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
       }
     };
 
-    (async () => {
-      const { token, participantId } = await api<{ token: string; participantId: string | null }>(`/api/rooms/${code}/realtime-token`);
-      if (cancelled) return;
-      await sb.realtime.setAuth(token);
-      tokenTimer = setInterval(async () => {
-        try {
-          const fresh = await api<{ token: string }>(`/api/rooms/${code}/realtime-token`);
-          await sb.realtime.setAuth(fresh.token);
-        } catch {}
-      }, 60 * 60_000);
+    const teardown = async () => {
+      if (channel) {
+        const c = channel;
+        channel = null;
+        await sb.removeChannel(c).catch(() => {});
+      }
+    };
 
-      const presenceKey = participantId ?? `viewer-${crypto.randomUUID()}`;
-      channel = sb.channel(`room:${code}`, { config: { private: true, presence: { key: presenceKey } } });
-      channel
-        .on("broadcast", { event: BROADCAST_EVENTS.votes }, ({ payload }) => {
-          sampleLatency(payload.sentAt);
-          const tallies = payload.tallies as Record<string, number>;
-          setState((s) =>
-            s && s.round?.id === payload.roundId
-              ? { ...s, proposals: s.proposals.map((p) => (p.id in tallies ? { ...p, votes: tallies[p.id]! } : p)) }
-              : s,
-          );
-        })
+    const scheduleReconnect = () => {
+      if (cancelled || retryTimer) return;
+      setStatus("reconnecting");
+      const delay = Math.min(1000 * 2 ** attempt++, 15_000);
+      retryTimer = setTimeout(() => {
+        retryTimer = null;
+        void connect();
+      }, delay);
+    };
+
+    const connect = async () => {
+      await teardown();
+      if (cancelled) return;
+      let participantId: string | null = null;
+      try {
+        const res = await api<{ token: string; participantId: string | null }>(`/api/rooms/${code}/realtime-token`);
+        participantId = res.participantId;
+        await sb.realtime.setAuth(res.token);
+      } catch {
+        scheduleReconnect();
+        return;
+      }
+      if (cancelled) return;
+      const c = sb.channel(`room:${code}`, { config: { private: true, presence: { key: participantId ?? presenceKeyFallback } } });
+      channel = c;
+      c.on("broadcast", { event: BROADCAST_EVENTS.votes }, ({ payload }) => {
+        sampleLatency(payload.sentAt);
+        const tallies = payload.tallies as Record<string, number>;
+        setState((s) =>
+          s && s.round?.id === payload.roundId
+            ? { ...s, proposals: s.proposals.map((p) => (p.id in tallies ? { ...p, votes: tallies[p.id]! } : p)) }
+            : s,
+        );
+        // New ballots also add feed entries; refresh lazily so 50 voters don't cause 50 refetches.
+        if (refetchTimer.current) return;
+        refetchTimer.current = setTimeout(() => {
+          refetchTimer.current = null;
+          void refetch();
+        }, 1500);
+      })
         .on("broadcast", { event: BROADCAST_EVENTS.activity }, ({ payload }) => {
           sampleLatency(payload.sentAt);
           setFlash(payload as PublicActivity);
@@ -133,26 +168,38 @@ export function useRoom(code: string, opts: { trackPresence?: boolean } = {}) {
           scheduleRefetch();
         })
         .on("presence", { event: "sync" }, () => {
-          const ps = channel!.presenceState<{ p?: boolean }>();
+          const ps = c.presenceState<{ p?: boolean }>();
           setOnline(Object.values(ps).filter((metas) => metas.some((m) => m.p)).length);
         })
-        .subscribe(async (s) => {
-          if (s === "SUBSCRIBED") {
+        .subscribe(async (st) => {
+          if (c !== channel) return;
+          if (st === "SUBSCRIBED") {
+            attempt = 0;
             setStatus("live");
-            void refetch();
-            if (opts.trackPresence && participantId) await channel!.track({ p: true });
-          } else if (s === "CHANNEL_ERROR" || s === "TIMED_OUT") {
-            setStatus("reconnecting");
-          } else if (s === "CLOSED") {
-            setStatus("offline");
+            void refetch(); // canonical state on every (re)subscribe
+            if (opts.trackPresence && participantId) await c.track({ p: true });
+          } else if (st === "CHANNEL_ERROR" || st === "TIMED_OUT" || st === "CLOSED") {
+            scheduleReconnect();
           }
         });
-    })().catch(() => setStatus("offline"));
+    };
+
+    void connect();
+    tokenTimer = setInterval(async () => {
+      try {
+        const fresh = await api<{ token: string }>(`/api/rooms/${code}/realtime-token`);
+        await sb.realtime.setAuth(fresh.token);
+      } catch {}
+    }, 60 * 60_000);
+    const onOnline = () => void connect();
+    window.addEventListener("online", onOnline);
 
     return () => {
       cancelled = true;
+      window.removeEventListener("online", onOnline);
+      if (retryTimer) clearTimeout(retryTimer);
       if (tokenTimer) clearInterval(tokenTimer);
-      if (channel) void sb.removeChannel(channel);
+      void teardown();
     };
   }, [code, opts.trackPresence, refetch, scheduleRefetch]);
 

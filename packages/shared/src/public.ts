@@ -51,6 +51,8 @@ export interface PublicAgentSession {
     testStatus: CheckStatus;
     checks: { name: string; status: CheckStatus }[];
     verifiedAt: string | null;
+    /** True when checks were simulated by the mock provider (no real PR). */
+    simulated: boolean;
   } | null;
 }
 

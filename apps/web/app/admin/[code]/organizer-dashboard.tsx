@@ -254,7 +254,7 @@ function AgentPanel({ s, act, busy }: { s: AdminState; act: Act; busy: string | 
           </dl>
           {a.verification && (
             <div className="rounded-lg border border-line p-2">
-              <p className="mb-1 text-xs text-fg-subtle">Required checks on {a.verification.commitSha.slice(0, 7)}</p>
+              <p className="mb-1 text-xs text-fg-subtle">Required checks on {a.verification.commitSha.slice(0, 7)}{a.verification.simulated && <span className="text-demo"> · simulated</span>}</p>
               <ul className="flex flex-wrap gap-3">
                 {a.verification.checks.map((c) => <li key={c.name} className="flex items-center gap-1 font-mono text-xs"><CheckIcon status={c.status as CheckStatus} /> {c.name}</li>)}
                 {!a.verification.checks.length && <li className="text-xs text-fg-subtle">waiting…</li>}

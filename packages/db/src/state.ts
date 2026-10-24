@@ -30,6 +30,7 @@ export function toPublicAgent(s: AgentSessionRow, v: Awaited<ReturnType<typeof l
           testStatus: v.test_status,
           checks: v.checks_json.map((c) => ({ name: c.name, status: c.status })),
           verifiedAt: v.verified_at?.toISOString() ?? null,
+          simulated: v.simulated,
         }
       : null,
   };

@@ -129,11 +129,13 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
                     </span>
                     <ExternalLink className="h-4 w-4 text-fg-subtle" />
                   </a>
+                ) : agent.verification?.simulated ? (
+                  <p className="rounded-xl border border-dashed border-demo/40 p-3 text-demo">Simulated pull request (demo mode, nothing was pushed)</p>
                 ) : (
                   <p className="rounded-xl border border-dashed border-line p-3 text-fg-subtle">No pull request yet</p>
                 )}
                 <div>
-                  <p className="mb-2 text-sm text-fg-muted">Verification</p>
+                  <p className="mb-2 text-sm text-fg-muted">Verification{agent.verification?.simulated && <span className="ml-2 text-demo">(simulated checks)</span>}</p>
                   {agent.verification ? (
                     <ul className="grid grid-cols-3 gap-2">
                       {agent.verification.checks.length ? agent.verification.checks.map((c) => (

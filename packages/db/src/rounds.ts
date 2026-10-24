@@ -94,6 +94,12 @@ export async function castVote(room: RoomRef, participantId: string, roundId: st
         set proposal_id = excluded.proposal_id, updated_at = now()
       returning id, (xmax <> 0) as changed`;
     const tallies = await voteTallies(roundId, sql);
+    if (!vote!.changed) {
+      const [who] = await sql<{ nickname: string; moderation_ok: boolean }[]>`select nickname, true as moderation_ok from participants where id = ${participantId}`;
+      const [p] = await sql<{ title: string }[]>`select title from proposals where id = ${proposalId}`;
+      await sql`insert into activity_events (room_id, event_type, public_payload)
+        values (${room.id}, 'vote_cast', ${sql.json({ nickname: who?.nickname ?? "Someone", title: p?.title ?? "" })})`;
+    }
     await broadcast(sql, room.code, BROADCAST_EVENTS.votes, {
       roundId,
       tallies: Object.fromEntries(tallies.map((t) => [t.proposal_id, t.votes])),

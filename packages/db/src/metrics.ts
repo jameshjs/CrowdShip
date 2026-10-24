@@ -7,7 +7,7 @@ export async function recordMetric(
   labels: Record<string, string | number | boolean> = {},
   roomId?: string,
 ): Promise<void> {
-  console.log(JSON.stringify({ level: "info", metric: name, ...value, ...labels, roomId, at: new Date().toISOString() }));
+  if (process.env.LOG_LEVEL !== "error") console.log(JSON.stringify({ level: "info", metric: name, ...value, ...labels, roomId, at: new Date().toISOString() }));
   try {
     await db()`insert into metrics (room_id, name, value_ms, value_num, labels)
       values (${roomId ?? null}, ${name}, ${value.ms ?? null}, ${value.num ?? null}, ${db().json(labels)})`;

@@ -32,6 +32,8 @@ export function describeActivity(a: PublicActivity): { icon: React.ElementType; 
       return { icon: Merge, text: `Organizer merged ${n(p.merged)} proposal${n(p.merged) === 1 ? "" : "s"} into "${s(p.title)}"`, tone: "info" };
     case "proposal_approved":
       return { icon: CheckCircle2, text: `"${s(p.title)}" approved for voting`, tone: "accent" };
+    case "vote_cast":
+      return { icon: Vote, text: `${s(p.nickname)} voted for "${s(p.title)}"`, tone: "neutral" };
     case "voting_started":
       return { icon: Vote, text: `Round ${n(p.roundNumber)} voting is open (${n(p.proposals)} proposals)`, tone: "accent" };
     case "voting_reopened":
@@ -55,11 +57,13 @@ export function describeActivity(a: PublicActivity): { icon: React.ElementType; 
     case "agent_cancelled":
       return { icon: XCircle, text: `${provider} session cancelled`, tone: "warn" };
     case "pr_opened":
-      return { icon: GitPullRequest, text: `Draft PR #${n(p.prNumber)} opened (${s(p.sha)})`, tone: "info" };
+      return p.simulated
+        ? { icon: GitPullRequest, text: "Simulated draft PR opened (demo mode)", tone: "demo" }
+        : { icon: GitPullRequest, text: `Draft PR #${n(p.prNumber)} opened (${s(p.sha)})`, tone: "info" };
     case "pr_updated":
       return { icon: GitPullRequest, text: `PR #${n(p.prNumber)} updated to ${s(p.sha)}, re-verifying`, tone: "info" };
     case "verification_passed":
-      return { icon: ShieldCheck, text: `All required checks passed on ${s(p.sha)}`, tone: "accent" };
+      return { icon: ShieldCheck, text: `All required checks passed on ${s(p.sha)}${p.simulated ? " (simulated)" : ""}`, tone: p.simulated ? "demo" : "accent" };
     case "verification_failed":
       return { icon: XCircle, text: `Checks failed on ${s(p.sha)}, so it's not verified`, tone: "danger" };
     case "preview_released":

@@ -39,6 +39,8 @@ export interface VerificationRow {
   test_status: CheckStatus;
   ci_status: CheckStatus;
   checks_json: { name: string; status: CheckStatus; url?: string }[];
+  simulated: boolean;
+  ci_dispatched_at: Date | null;
   verified_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -176,7 +178,7 @@ export async function cancelAgentSession(room: RoomRef, id: string): Promise<voi
 export async function recordPullRequest(
   room: RoomRef,
   sessionId: string,
-  pr: { number: number; url: string; headSha: string; previewUrl?: string | null },
+  pr: { number: number; url: string | null; headSha: string; previewUrl?: string | null; simulated?: boolean },
 ): Promise<void> {
   await db().begin(async (sql) => {
     const s = await getAgentSession(sessionId, sql);
@@ -192,7 +194,7 @@ export async function recordPullRequest(
       status_detail: "Draft PR opened",
     }, sql);
     await sql`
-      insert into verification_results (agent_session_id, commit_sha) values (${sessionId}, ${pr.headSha})
+      insert into verification_results (agent_session_id, commit_sha, simulated) values (${sessionId}, ${pr.headSha}, ${pr.simulated ?? false})
       on conflict (agent_session_id, commit_sha) do nothing`;
     await sql`update proposals set status = 'verifying', updated_at = now() where id = ${s.proposal_id} and status in ('developing','review_ready','verifying')`;
     // A new head SHA always goes back to verifying: previous green checks do not carry over.
@@ -207,6 +209,7 @@ export async function recordPullRequest(
       prUrl: pr.url,
       sha: pr.headSha.slice(0, 7),
       provider: s.provider,
+      simulated: pr.simulated ?? false,
     });
   });
 }
@@ -241,6 +244,7 @@ export async function recordVerification(
       if (final) {
         await activity(sql, room, passed ? "verification_passed" : "verification_failed", {
           prNumber: s.pr_number,
+          simulated: prev?.simulated ?? false,
           sha: sha.slice(0, 7),
           checks: result.checks.map((c) => ({ name: c.name, status: c.status })),
         });
