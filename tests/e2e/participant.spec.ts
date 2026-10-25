@@ -110,3 +110,12 @@ test("a participant cannot perform organizer actions or launch an agent", async 
   const csrf = await page.request.post(`/api/rooms/${code}/feedback`, { data: { type: "bug", text: "csrf test" }, headers: { Origin: "https://evil.example" } });
   expect(csrf.status()).toBe(403);
 });
+
+test("home page room-code form lands on the room's join page on the same host", async ({ page, baseURL }) => {
+  const code = await createRoom(await organizer());
+  await page.goto("/");
+  await page.getByLabel("Room code").fill(code.toLowerCase());
+  await page.getByRole("button", { name: "Join" }).click();
+  await expect(page).toHaveURL(`${baseURL}/join/${code}`); // relative redirect: never the server's internal host
+  await expect(page.getByTestId("join-button")).toBeVisible();
+});
