@@ -22,6 +22,7 @@ type Proposal = {
 type Feedback = {
   id: string; type: string; text: string; nickname: string; moderation: "visible" | "held" | "hidden"; proposal_id: string | null;
   confidence: number | null; element_label: string | null; page_url: string | null; created_at: string; triaged_at: string | null;
+  region: { x: number; y: number; w: number; h: number; pageW: number; pageH: number; points: [number, number][] } | null;
 };
 type AdminState = {
   room: { code: string; projectName: string; repository: string; productionUrl: string | null; provider: AgentProviderName; maxAcuPerSession: number; maxSessionsTotal: number; agentPaused: boolean };
@@ -465,6 +466,7 @@ function FeedbackPanel({ s, act }: { s: AdminState; act: Act }) {
                 {f.moderation === "held" && <span className="text-warn"> · held by filter</span>}
               </p>
             </div>
+            {f.region && <RegionMap region={f.region} />}
             {f.moderation === "hidden" ? (
               <button title="Show" onClick={() => act({ type: "feedback_moderation", feedbackId: f.id, moderation: "visible" })}><Eye className="h-4 w-4 text-fg-subtle" /></button>
             ) : (
@@ -536,5 +538,25 @@ function QueuesPanel({ s, act }: { s: AdminState; act: Act }) {
       )}
       <p className="text-xs text-fg-subtle"><Trash2 className="mr-1 inline h-3 w-3" />Dead jobs are kept for inspection; retry re-queues with a fresh attempt budget.</p>
     </Card>
+  );
+}
+
+/** Where on the page a participant circled: the page outline with their drawing on it. */
+function RegionMap({ region }: { region: NonNullable<Feedback["region"]> }) {
+  // Show one screen-height-ish window around the circle so tall pages stay readable.
+  const viewH = Math.min(region.pageH, Math.max(region.h * 3, region.pageW * 1.6));
+  const top = Math.max(0, Math.min(region.pageH - viewH, region.y + region.h / 2 - viewH / 2));
+  const d = `M${region.points.map(([x, y]) => `${x},${y}`).join(" L")} Z`;
+  return (
+    <svg
+      viewBox={`0 ${top} ${region.pageW} ${viewH}`}
+      className="h-16 w-12 shrink-0 rounded-md border border-line bg-bg-sunken"
+      role="img"
+      aria-label={`Circled area at ${region.x},${region.y} (${region.w}×${region.h}px) on a ${region.pageW}px-wide page`}
+      data-testid="feedback-region"
+    >
+      <title>{`Circled ${region.w}×${region.h}px at (${region.x}, ${region.y})`}</title>
+      <path d={d} fill="oklch(0.72 0.16 290 / 0.25)" stroke="oklch(0.78 0.15 290)" strokeWidth={Math.max(2, region.pageW / 90)} strokeLinejoin="round" />
+    </svg>
   );
 }

@@ -1,4 +1,4 @@
-import { moderate, sanitizeText, type FeedbackInput, type FeedbackType } from "@crowdship/shared";
+import { moderate, sanitizeText, type FeedbackInput, type FeedbackRegion, type FeedbackType } from "@crowdship/shared";
 import { db } from "./client";
 import { notFound } from "./errors";
 import { enqueue } from "./jobs";
@@ -15,6 +15,7 @@ export interface FeedbackRow {
   page_url: string | null;
   element_identifier: string | null;
   element_label: string | null;
+  region: FeedbackRegion | null;
   application_version: string | null;
   device_category: string | null;
   browser: string | null;
@@ -46,11 +47,12 @@ export async function submitFeedback(
 
   return db().begin(async (sql) => {
     const [row] = await sql<FeedbackRow[]>`
-      insert into feedback (participant_id, room_id, type, text, page_url, element_identifier, element_label,
+      insert into feedback (participant_id, room_id, type, text, page_url, element_identifier, element_label, region,
         application_version, device_category, browser, moderation,
         triaged_at)
       values (${participant.id}, ${room.id}, ${input.type}, ${text}, ${safePageUrl(input.pageUrl)},
         ${input.elementIdentifier ? sanitizeText(input.elementIdentifier, 200) : null}, ${elementLabel},
+        ${input.region ? sql.json(input.region) : null},
         ${input.applicationVersion ? sanitizeText(input.applicationVersion, 40) : null},
         ${input.deviceCategory ?? null}, ${input.browser ? sanitizeText(input.browser, 60) : null}, ${moderation},
         ${input.type === "praise" && text.length === 0 ? new Date() : null})

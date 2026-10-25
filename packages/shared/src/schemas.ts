@@ -18,6 +18,22 @@ export const joinInput = z.object({
   nickname: nicknameSchema.optional(),
 });
 
+const px = z.number().finite().min(0).max(100_000);
+
+/** An area the participant circled in the widget, in page (document) pixels. */
+export const feedbackRegion = z
+  .object({
+    x: px,
+    y: px,
+    w: px,
+    h: px,
+    pageW: px.min(1),
+    pageH: px.min(1),
+    points: z.array(z.tuple([px, px])).min(3).max(64),
+  })
+  .transform((r) => ({ ...r, points: r.points.map(([x, y]) => [Math.round(x), Math.round(y)] as [number, number]) }));
+export type FeedbackRegion = z.infer<typeof feedbackRegion>;
+
 export const feedbackInput = z
   .object({
     type: z.enum(FEEDBACK_TYPES),
@@ -25,6 +41,7 @@ export const feedbackInput = z
     pageUrl: z.string().max(300).optional(),
     elementIdentifier: z.string().max(200).optional(),
     elementLabel: z.string().max(200).optional(),
+    region: feedbackRegion.optional(),
     applicationVersion: z.string().max(40).optional(),
     deviceCategory: z.enum(["mobile", "tablet", "desktop", "unknown"]).optional(),
     browser: z.string().max(60).optional(),
