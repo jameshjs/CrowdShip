@@ -59,7 +59,7 @@ export default function ExplorePage() {
             <Trophy className="h-3.5 w-3.5" aria-hidden /> {winner ? "Winning proposal" : "Currently leading"}
           </p>
           <p className="mt-1 text-lg font-semibold">{(winner ?? leader)!.title}</p>
-          <p className="text-sm text-fg-muted tabular">{(winner ?? leader)!.votes} votes</p>
+          <p className="text-sm text-fg-muted tabular">{(winner ?? leader)!.votes} {(winner ?? leader)!.votes === 1 ? "vote" : "votes"}</p>
         </Card>
       )}
 

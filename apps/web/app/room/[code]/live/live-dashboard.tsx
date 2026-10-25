@@ -82,7 +82,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
                 <ul className="mt-2 space-y-1.5 text-fg-muted">
                   {winner.requirements.slice(0, 4).map((r) => <li key={r}>• {r}</li>)}
                 </ul>
-                <p className="pt-2 text-fg-subtle tabular">{winner.votes} votes · {winner.supporters} people suggested it</p>
+                <p className="pt-2 text-fg-subtle tabular">{winner.votes} {winner.votes === 1 ? "vote" : "votes"} · {winner.supporters} {winner.supporters === 1 ? "person" : "people"} suggested it</p>
               </div>
             ) : (
               <ul className="space-y-4">

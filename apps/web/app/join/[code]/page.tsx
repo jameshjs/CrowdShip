@@ -34,7 +34,9 @@ export default async function JoinPage({ params }: { params: Promise<{ code: str
           ))}
         </ul>
       </div>
-      <JoinForm code={room.code} suggested={generateNickname()} closed={room.status !== "active"} />
+      <div className="mt-8">
+        <JoinForm code={room.code} suggested={generateNickname()} closed={room.status !== "active"} />
+      </div>
     </main>
   );
 }

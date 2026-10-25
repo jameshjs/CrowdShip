@@ -8,20 +8,26 @@ const APP = "http://localhost:5173";
 
 const PAGE = `<!doctype html><meta name="viewport" content="width=device-width">
   <body style="margin:0;font-family:sans-serif">
-    <h1 data-testid="title" style="margin:24px">Event tasks</h1>
-    <p data-testid="counts" style="margin:24px;padding:16px;background:#eee">2 of 4 done</p>
+    <main style="padding:8px 0 400px">
+      <h1 data-testid="title" style="margin:24px">Event tasks</h1>
+      <p data-testid="counts" style="margin:24px;padding:16px;background:#eee">2 of 4 done</p>
+    </main>
     <script src="${BASE}/widget.js"></script>
   </body>`;
 
 // A real local server (not page.route): Chrome only lets loopback pages load scripts from localhost.
-let server: Server;
+let server: Server | null = null;
 test.beforeAll(async () => {
-  server = createServer((_req, res) => res.writeHead(200, { "content-type": "text/html" }).end(PAGE));
-  await new Promise<void>((resolve) => server.listen(5173, "localhost", resolve));
+  const s = createServer((_req, res) => res.writeHead(200, { "content-type": "text/html" }).end(PAGE));
+  server = await new Promise<Server | null>((resolve) => {
+    s.once("error", () => resolve(null)); // port taken, e.g. by the demo app's dev server
+    s.listen(5173, "localhost", () => resolve(s));
+  });
 });
-test.afterAll(() => new Promise<void>((resolve) => server.close(() => resolve())));
+test.afterAll(() => new Promise<void>((resolve) => (server ? server.close(() => resolve()) : resolve())));
 
 test("participant circles an area in the widget and the organizer sees the region", async ({ page }) => {
+  test.skip(!server, "Port 5173 is in use (stop the demo app's dev server to run this test)");
   const org = await organizer();
   const code = await createRoom(org);
   await page.goto(`/join/${code}`);
@@ -57,6 +63,7 @@ test("participant circles an area in the widget and the organizer sees the regio
   const f = s.feedback.find((x: { text: string }) => x.text === "This counter is hard to read");
   expect(f.type).toBe("general");
   expect(f.element_label).toContain("2 of 4 done");
+  expect(f.element_label).not.toContain("Event tasks"); // page wrappers around the circle are not "inside" it
   expect(f.region.points.length).toBeGreaterThanOrEqual(3);
   expect(f.region.y).toBeLessThanOrEqual(Math.round(box.y));
   expect(f.region.y + f.region.h).toBeGreaterThanOrEqual(Math.round(box.y + box.height));

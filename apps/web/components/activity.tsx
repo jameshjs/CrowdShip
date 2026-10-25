@@ -40,7 +40,7 @@ export function describeActivity(a: PublicActivity): { icon: React.ElementType; 
       return { icon: Vote, text: `Round ${n(p.roundNumber)} voting reopened`, tone: "accent" };
     case "voting_closed":
       return p.winnerId
-        ? { icon: Trophy, text: `Voting closed. "${s(p.title)}" won with ${n(p.votes)} votes`, tone: "accent" }
+        ? { icon: Trophy, text: `Voting closed. "${s(p.title)}" won with ${n(p.votes)} vote${n(p.votes) === 1 ? "" : "s"}`, tone: "accent" }
         : { icon: Flag, text: p.tie ? "Voting closed in a tie, so the organizer will pick" : "Voting closed with no votes", tone: "warn" };
     case "winner_chosen":
       return { icon: Trophy, text: `Organizer picked "${s(p.title)}"`, tone: "accent" };

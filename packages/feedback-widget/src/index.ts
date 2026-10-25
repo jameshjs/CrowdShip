@@ -254,16 +254,28 @@ export function mountFeedbackWidget(opts: WidgetOptions): () => void {
     if (viewportPts.length < 3 || box.right - box.left < 16 || box.bottom - box.top < 16) return false;
 
     // What's inside: sample a grid under the overlay (which is hidden from elementsFromPoint by filtering the host).
+    // Skip wrappers much bigger than the circle (their label would be the whole page's text);
+    // if only wrappers were hit, fall back to the smallest one.
+    const boxArea = (box.right - box.left) * (box.bottom - box.top);
     const found = new Map<string, ElementInfo>();
+    let smallest: { el: Element; area: number } | null = null;
     for (let i = 1; i <= 4; i++) {
       for (let j = 1; j <= 4; j++) {
         const x = box.left + ((box.right - box.left) * i) / 5;
         const y = box.top + ((box.bottom - box.top) * j) / 5;
         const target = pickContent(x, y);
         if (!target) continue;
+        const r = target.getBoundingClientRect();
+        const area = r.width * r.height;
+        if (!smallest || area < smallest.area) smallest = { el: target, area };
+        if (area > boxArea * 2.5) continue;
         const info = describeElement(target);
         if (!found.has(info.identifier)) found.set(info.identifier, info);
       }
+    }
+    if (!found.size && smallest) {
+      const info = describeElement(smallest.el);
+      found.set(info.identifier, info);
     }
     const infos = [...found.values()].slice(0, 5);
     element = infos.length
