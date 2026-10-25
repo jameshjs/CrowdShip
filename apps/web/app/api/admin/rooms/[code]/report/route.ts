@@ -35,7 +35,7 @@ function toMarkdown(r: ResultsReport): string {
   ];
   if (!r.ranked.length) lines.push("_No vote has been held yet._");
   for (const p of r.ranked) {
-    lines.push(`## ${p.rank}. ${md(p.title)}${p.winner ? " (top pick)" : ""}`, "", `**${p.votes} vote${p.votes === 1 ? "" : "s"}** · ${p.supporters} ${p.supporters === 1 ? "person" : "people"} suggested it`, "");
+    lines.push(`## ${p.rank}. ${md(p.title)}${p.winner ? " (top pick)" : ""}`, "", `**${p.votes} vote${p.votes === 1 ? "" : "s"}**${p.likes + p.dislikes ? ` · swipe approval ${Math.round((p.likes / (p.likes + p.dislikes)) * 100)}% (${p.likes} 👍 / ${p.dislikes} 👎)` : ""} · ${p.supporters} ${p.supporters === 1 ? "person" : "people"} suggested it`, "");
     if (p.description) lines.push(md(p.description), "");
     if (p.requirements.length) lines.push("What it should do:", ...p.requirements.map((x) => `- ${md(x)}`), "");
     if (p.quotes.length) lines.push("In their words:", ...p.quotes.map((q) => `> "${md(q.text)}" (${md(q.nickname)}${q.where ? `, ${md(q.where)}` : ""})`), "");
@@ -52,9 +52,9 @@ const cell = (v: string | number) => {
 };
 
 function toCsv(r: ResultsReport): string {
-  const head = ["rank", "proposal", "votes", "supporters", "top_pick", "description", "requirements", "quotes"];
+  const head = ["rank", "proposal", "votes", "swipe_likes", "swipe_dislikes", "supporters", "top_pick", "description", "requirements", "quotes"];
   const rows = r.ranked.map((p) => [
-    p.rank, p.title, p.votes, p.supporters, p.winner ? "yes" : "no", p.description, p.requirements.join(" | "),
+    p.rank, p.title, p.votes, p.likes, p.dislikes, p.supporters, p.winner ? "yes" : "no", p.description, p.requirements.join(" | "),
     p.quotes.map((q) => `${q.nickname}: ${q.text}`).join(" | "),
   ]);
   return [head, ...rows].map((row) => row.map(cell).join(",")).join("\r\n") + "\r\n";

@@ -1,9 +1,10 @@
-import type { PublicActivity, PublicAgentSession, PublicProposal, PublicRoomState } from "@crowdship/shared";
+import type { FeedbackRegion, PublicActivity, PublicAgentSession, PublicProposal, PublicRoomState } from "@crowdship/shared";
 import { db } from "./client";
 import { latestVerification, previewReviewSummary, type AgentSessionRow } from "./agents";
 import { getRoomByCode } from "./rooms";
 import { currentRound, voteTallies } from "./rounds";
 import { listProposals } from "./proposals";
+import { swipeTallies } from "./swipes";
 
 export function toPublicAgent(s: AgentSessionRow, v: Awaited<ReturnType<typeof latestVerification>>): PublicAgentSession {
   return {
@@ -60,6 +61,8 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
     : [];
   const tallies = round && roundProposalIds.length ? await voteTallies(round.id) : [];
   const tallyMap = new Map(tallies.map((t) => [t.proposal_id, t.votes]));
+  const swipeMap = new Map((round ? await swipeTallies(round.id) : []).map((t) => [t.proposal_id, { likes: t.likes, dislikes: t.dislikes }]));
+  const locations = await proposalLocations(room.id);
 
   const publicProposals: PublicProposal[] = proposals
     .filter((p) => p.status !== "rejected" && p.status !== "suggested")
@@ -73,6 +76,8 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
       status: p.status,
       supporters: p.supporters,
       votes: tallyMap.get(p.id) ?? 0,
+      approval: swipeMap.get(p.id) ?? { likes: 0, dislikes: 0 },
+      location: locations.get(p.id) ?? null,
     }));
 
   let agent: PublicAgentSession | null = null;
@@ -149,4 +154,16 @@ export async function contributedTo(proposalId: string, participantId: string): 
     select 1 from proposal_feedback pf join feedback f on f.id = pf.feedback_id
     where pf.proposal_id = ${proposalId} and f.participant_id = ${participantId} and f.moderation = 'visible' limit 1`;
   return Boolean(row);
+}
+
+/** Most precise location per proposal: a circled region first, then a selected element, then any page/label. */
+async function proposalLocations(roomId: string): Promise<Map<string, NonNullable<PublicProposal["location"]>>> {
+  const rows = await db()<{ proposal_id: string; page_url: string | null; element_label: string | null; region: FeedbackRegion | null }[]>`
+    select distinct on (pf.proposal_id) pf.proposal_id, f.page_url, f.element_label, f.region
+    from proposal_feedback pf
+    join feedback f on f.id = pf.feedback_id and f.moderation = 'visible'
+    join proposals p on p.id = pf.proposal_id and p.room_id = ${roomId}
+    where f.region is not null or f.element_label is not null
+    order by pf.proposal_id, (f.region is null), f.created_at`;
+  return new Map(rows.map((r) => [r.proposal_id, { pageUrl: r.page_url, label: r.element_label, region: r.region }]));
 }

@@ -1,3 +1,4 @@
+import type { FeedbackRegion } from "./schemas";
 import type {
   AgentProviderName, AgentState, RoomMode, CheckStatus, Complexity, FeedbackType, ProposalStatus, RoundStatus,
 } from "./domain";
@@ -15,6 +16,10 @@ export interface PublicProposal {
   status: ProposalStatus;
   supporters: number;
   votes: number;
+  /** Swipe deck results for the current round's ideas phase. */
+  approval: { likes: number; dislikes: number };
+  /** Where on the page the idea applies, from the feedback behind it (widget element, circle, or "where on the site?"). */
+  location: { pageUrl: string | null; label: string | null; region: FeedbackRegion | null } | null;
 }
 
 export interface PublicRound {
@@ -113,4 +118,9 @@ export function creditLine(credits: { names: string[]; total: number }, shown = 
   }
   const rest = total - shown;
   return `${names.slice(0, shown).join(", ")} and ${rest} other${rest === 1 ? "" : "s"}`;
+}
+
+/** Swipe approval with a small prior (one like, one dislike) so 1/1 doesn't outrank 9/10. */
+export function approvalScore(a: { likes: number; dislikes: number }): number {
+  return (a.likes + 1) / (a.likes + a.dislikes + 2);
 }

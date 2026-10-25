@@ -8,6 +8,7 @@ import { Countdown, roundStatusLabel, useNow } from "@/components/status";
 import { api, ApiError } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { useRoomCtx } from "../room-shell";
+import { SwipeDeck } from "./swipe-deck";
 
 export default function VotePage() {
   const { state, setState, code, serverNow, refetch } = useRoomCtx();
@@ -55,7 +56,9 @@ export default function VotePage() {
     });
   }
 
-  if (!round || round.proposalIds.length === 0 || round.status === "collecting" || round.status === "triaging") {
+  if (round && (round.status === "collecting" || round.status === "triaging")) return <SwipeDeck />;
+
+  if (!round || round.proposalIds.length === 0) {
     return (
       <div className="space-y-2 pt-8 text-center">
         <h1 className="text-xl font-semibold">Voting hasn&apos;t started yet</h1>

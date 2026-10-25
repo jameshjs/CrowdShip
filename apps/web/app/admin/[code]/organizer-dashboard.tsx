@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   AlertTriangle, Bot, Check, ExternalLink, Eye, EyeOff, GitMerge, GitPullRequest, Pause, Play, RefreshCw, Scissors, Sparkles, Trash2, Trophy, X,
 } from "lucide-react";
-import { PROVIDER_LABELS, type AgentProviderName, type CheckStatus, type Complexity, type ProposalStatus, type PublicAgentSession, type QueueName, type RoundStatus } from "@crowdship/shared";
+import { approvalScore, PROVIDER_LABELS, type AgentProviderName, type CheckStatus, type Complexity, type ProposalStatus, type PublicAgentSession, type QueueName, type RoundStatus } from "@crowdship/shared";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +29,7 @@ type AdminState = {
   round: { id: string; number: number; status: RoundStatus; ends_at: string | null; winning_proposal_id: string | null } | null;
   roundProposalIds: string[];
   tallies: Record<string, number>;
+  approvals: Record<string, { likes: number; dislikes: number }>;
   feedback: Feedback[];
   proposals: Proposal[];
   agent: (PublicAgentSession & { previewUrl: string | null; githubIssueNumber: number | null; providerSessionId: string | null }) | null;
@@ -138,10 +139,15 @@ type Act = (body: Record<string, unknown>, label?: string) => Promise<Record<str
 
 function RoundPanel({ s, now, act, busy }: { s: AdminState; now: number; act: Act; busy: string | null }) {
   const round = s.round;
-  const approved = s.proposals.filter((p) => p.status === "approved");
+  const approval = (id: string) => s.approvals[id] ?? { likes: 0, dislikes: 0 };
+  const swiped = Object.values(s.approvals).some((a) => a.likes + a.dislikes > 0);
+  // With swipes in, rank by crowd approval and shortlist the top 3 for the final vote.
+  const approved = s.proposals
+    .filter((p) => p.status === "approved")
+    .sort((a, b) => (swiped ? approvalScore(approval(b.id)) - approvalScore(approval(a.id)) : 0));
   const [picked, setPicked] = useState<string[] | null>(null);
   const [duration, setDuration] = useState(180);
-  const selection = picked ?? approved.map((p) => p.id);
+  const selection = picked ?? (swiped ? approved.slice(0, 3) : approved).map((p) => p.id);
   const ballot = s.proposals.filter((p) => s.roundProposalIds.includes(p.id));
   const tallies = s.tallies;
   const top = Math.max(0, ...Object.values(tallies));
@@ -157,7 +163,9 @@ function RoundPanel({ s, now, act, busy }: { s: AdminState; now: number; act: Ac
 
       {(round?.status === "collecting" || round?.status === "triaging") && (
         <div className="space-y-3">
-          <p className="text-sm text-fg-muted">Pick approved proposals for the ballot:</p>
+          <p className="text-sm text-fg-muted">
+            {swiped ? "Top 3 by crowd approval are pre-selected for the final vote. Adjust if you like:" : "Pick approved proposals for the ballot (participants can swipe them first):"}
+          </p>
           <ul className="grid gap-1.5 sm:grid-cols-2">
             {approved.map((p) => (
               <li key={p.id}>
@@ -168,7 +176,11 @@ function RoundPanel({ s, now, act, busy }: { s: AdminState; now: number; act: Ac
                     onChange={(e) => setPicked(e.target.checked ? [...selection, p.id] : selection.filter((x) => x !== p.id))}
                   />
                   <span className="flex-1">{p.title}</span>
-                  <span className="text-xs text-fg-subtle">{p.supporters}</span>
+                  {swiped ? (
+                    <span className="text-xs tabular text-fg-subtle" data-testid="approval">
+                      👍 {approval(p.id).likes} · 👎 {approval(p.id).dislikes} · {Math.round((approval(p.id).likes / Math.max(1, approval(p.id).likes + approval(p.id).dislikes)) * 100)}%
+                    </span>
+                  ) : <span className="text-xs text-fg-subtle">{p.supporters}</span>}
                 </label>
               </li>
             ))}

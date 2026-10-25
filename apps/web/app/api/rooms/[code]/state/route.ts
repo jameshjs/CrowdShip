@@ -1,4 +1,4 @@
-import { contributedTo, getParticipant, getPublicRoomState, getRoomByCode, myVote, db } from "@crowdship/db";
+import { contributedTo, mySwipes, getParticipant, getPublicRoomState, getRoomByCode, myVote, db } from "@crowdship/db";
 import { route } from "@/lib/api";
 import { readGuestSessionId } from "@/lib/auth";
 import { roomCode, type RoomCtx } from "@/lib/room-params";
@@ -24,6 +24,7 @@ export const GET = route<RoomCtx>(async (_req, ctx) => {
         vote: state.round ? await myVote(state.round.id, p.id) : null,
         previewRating: review?.rating ?? null,
         contributed: winner ? await contributedTo(winner, p.id) : false,
+        swipes: state.round ? await mySwipes(state.round.id, p.id) : {},
       };
     }
   }

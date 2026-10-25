@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { Bot, ExternalLink, Trophy, GitPullRequest, Eye, MessageSquare, Lightbulb, Users, Vote, Wifi, WifiOff, Star } from "lucide-react";
-import { creditLine, PROVIDER_LABELS, type PublicRoomState } from "@crowdship/shared";
+import { approvalScore, creditLine, PROVIDER_LABELS, type PublicRoomState } from "@crowdship/shared";
 import { useRoom } from "@/lib/client/use-room";
 import { ActivityRow } from "@/components/activity";
 import { agentStateLabel, CheckIcon, Countdown, DemoModeBadge, Pipeline, roundStatusLabel, useNow } from "@/components/status";
@@ -17,10 +17,13 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
   if (!state) return <div className="grid min-h-dvh place-items-center text-fg-muted">Connecting…</div>;
   const { round, agent } = state;
   const ballot = round ? state.proposals.filter((p) => round.proposalIds.includes(p.id)) : [];
+  // Before the final vote, rank by swipe approval (if anyone has swiped); during/after it, by votes.
+  const swipePhase = !ballot.length && state.proposals.some((p) => p.approval.likes + p.approval.dislikes > 0);
   const ranked = (ballot.length ? ballot : state.proposals.filter((p) => p.status === "approved"))
     .slice()
-    .sort((a, b) => b.votes - a.votes || b.supporters - a.supporters)
+    .sort((a, b) => swipePhase ? approvalScore(b.approval) - approvalScore(a.approval) : b.votes - a.votes || b.supporters - a.supporters)
     .slice(0, 5);
+  const pct = (p: (typeof ranked)[number]) => Math.round((p.approval.likes / Math.max(1, p.approval.likes + p.approval.dislikes)) * 100);
   const maxVotes = Math.max(1, ...ranked.map((p) => p.votes));
   const winner = state.proposals.find((p) => p.id === round?.winningProposalId);
   const totalReviews = state.reviews.yes + state.reviews.no + state.reviews.needs_improvement;
@@ -77,7 +80,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
         <section className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1.1fr_1fr_0.9fr]">
           {/* proposals */}
           <div className="glass flex flex-col rounded-2xl border border-line p-5">
-            <h2 className="mb-4 text-sm uppercase tracking-[0.15em] text-fg-subtle">{winner ? "Winner" : "Leading proposals"}</h2>
+            <h2 className="mb-4 text-sm uppercase tracking-[0.15em] text-fg-subtle">{winner ? "Winner" : swipePhase ? "Crowd approval" : "Leading proposals"}</h2>
             {winner ? (
               <div className="space-y-3">
                 <p className="text-4xl font-semibold leading-tight text-balance">{winner.title}</p>
@@ -94,10 +97,10 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
                     <motion.li key={p.id} layout transition={{ type: "spring", stiffness: 200, damping: 26 }} className="space-y-1.5">
                       <div className="flex items-baseline justify-between gap-4">
                         <p className="text-xl font-medium"><span className="mr-2 font-mono text-fg-subtle">{i + 1}</span>{p.title}</p>
-                        <span className="text-2xl font-semibold tabular">{p.votes}</span>
+                        <span className="text-2xl font-semibold tabular">{swipePhase ? (p.approval.likes + p.approval.dislikes ? `${pct(p)}%` : "—") : p.votes}</span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-bg-sunken">
-                        <motion.div className="h-full rounded-full bg-brand-gradient" initial={false} animate={{ width: `${(p.votes / maxVotes) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
+                        <motion.div className="h-full rounded-full bg-brand-gradient" initial={false} animate={{ width: `${swipePhase ? pct(p) : (p.votes / maxVotes) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
                       </div>
                     </motion.li>
                   ))}

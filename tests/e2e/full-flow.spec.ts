@@ -23,9 +23,9 @@ test("complete flow in labeled demo mode: feedback → vote → agent → PR →
   await act(org, code, { type: "start_voting", proposalIds: s.proposals.filter((p: { status: string }) => p.status === "approved").map((p: { id: string }) => p.id), durationSeconds: 60 });
   await user.getByTestId("tab-vote").click();
   const voted = user.waitForResponse((r) => r.url().endsWith("/vote") && r.ok());
-  await user.locator(`[data-proposal-id="${progress.id}"]`).click();
+  await user.locator(`[data-testid="vote-card"][data-proposal-id="${progress.id}"]`).click();
   await voted; // the badge is optimistic; wait for the server to accept the ballot
-  await expect(user.locator(`[data-proposal-id="${progress.id}"]`).getByTestId("my-vote")).toBeVisible();
+  await expect(user.locator(`[data-testid="vote-card"][data-proposal-id="${progress.id}"]`).getByTestId("my-vote")).toBeVisible();
   await act(org, code, { type: "close_voting" });
   await expect(live.getByText("Winner", { exact: true })).toBeVisible();
 

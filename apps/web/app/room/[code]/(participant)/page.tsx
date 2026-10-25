@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, GitPullRequest, MessageSquarePlus, Vote } from "lucide-react";
+import { ChevronRight, GitPullRequest, Layers, MessageSquarePlus, Vote } from "lucide-react";
 import { creditLine, type PublicAgentSession, type PublicRoomState } from "@crowdship/shared";
 import { Card } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
@@ -23,6 +23,8 @@ export default function HomePage() {
   const feedbackMode = state.room.mode === "feedback";
   const status = feedbackMode ? feedbackStatusCopy(state, winner?.title ?? null) : statusCopy(state, winner?.title ?? null);
   const lastResult = feedbackMode ? state.history.find((h) => h.status === "completed") : undefined;
+  const ideasPhase = round?.status === "collecting" || round?.status === "triaging";
+  const toSwipe = ideasPhase ? state.proposals.filter((p) => p.status === "approved" && !(p.id in (state.me?.swipes ?? {}))).length : 0;
 
   return (
     <div className="space-y-4">
@@ -41,6 +43,11 @@ export default function HomePage() {
         {status.cta === "feedback" && (
           <Link href={`/room/${code}/feedback`} className={cn(buttonVariants({ size: "lg" }), "w-full")}>
             <MessageSquarePlus className="h-5 w-5" aria-hidden /> Give feedback
+          </Link>
+        )}
+        {toSwipe > 0 && (
+          <Link href={`/room/${code}/vote`} className={cn(buttonVariants({ size: "lg", variant: "secondary" }), "w-full")} data-testid="home-swipe">
+            <Layers className="h-5 w-5" aria-hidden /> Swipe ideas ({toSwipe})
           </Link>
         )}
         {status.cta === "vote" && (

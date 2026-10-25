@@ -62,6 +62,12 @@ export const voteInput = z.object({
   roundId: z.uuid(),
 });
 
+export const swipeInput = z.object({
+  proposalId: z.uuid(),
+  roundId: z.uuid(),
+  liked: z.boolean(),
+});
+
 export const previewReviewInput = z.object({
   proposalId: z.uuid(),
   rating: z.enum(PREVIEW_RATINGS),

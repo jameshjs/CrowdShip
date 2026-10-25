@@ -134,11 +134,12 @@ export function mountFeedbackWidget(opts: WidgetOptions): () => void {
 
     if (mode === "form") {
       const sheet = el("div", "sheet");
-      sheet.append(el("p", "title", region ? "What about this area?" : kind === "bug" ? "What went wrong?" : "What would make this better?"));
-      if (element) sheet.append(el("span", "chip", `${region ? "⭕" : "🎯"} ${element.label}`));
+      const circled = kind === "general" && region;
+      sheet.append(el("p", "title", circled ? "What about this area?" : kind === "bug" ? "What went wrong?" : "What would make this better?"));
+      if (element) sheet.append(el("span", "chip", `${circled ? "⭕" : "🎯"} ${element.label}`));
       const ta = document.createElement("textarea");
       ta.maxLength = 1000;
-      ta.placeholder = region ? "e.g. This part is hard to read" : kind === "bug" ? "e.g. The counter is wrong after I uncheck a task" : "Describe your idea";
+      ta.placeholder = circled ? "e.g. This part is hard to read" : kind === "bug" ? "e.g. The counter is wrong after I uncheck a task" : "Describe your idea";
       ta.setAttribute("data-testid", "crowdship-text");
       sheet.append(ta);
       const row = el("div", "row");
@@ -188,6 +189,13 @@ export function mountFeedbackWidget(opts: WidgetOptions): () => void {
     const target = pick(e.clientX, e.clientY);
     if (!target) return;
     element = describeElement(target);
+    // Record where it is (page pixels) so ideas built from this feedback can preview the spot.
+    const r = target.getBoundingClientRect();
+    const x = Math.round(r.left + window.scrollX), y = Math.round(r.top + window.scrollY), w = Math.round(r.width), h = Math.round(r.height);
+    region = w >= 4 && h >= 4
+      ? { x, y, w, h, pageW: Math.max(1, document.documentElement.scrollWidth), pageH: Math.max(1, document.documentElement.scrollHeight),
+          points: [[x, y], [x + w, y], [x + w, y + h], [x, y + h]] }
+      : null;
     detachSelect();
     kind = "bug";
     mode = "form";
@@ -204,6 +212,7 @@ export function mountFeedbackWidget(opts: WidgetOptions): () => void {
     document.removeEventListener("submit", swallow, true);
   };
   const startSelecting = () => {
+    region = null;
     mode = "selecting";
     render();
     document.addEventListener("pointermove", onMove, true);

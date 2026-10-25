@@ -48,7 +48,7 @@ test("feedback-only room for a site you don't own: feedback → vote → publish
   await act(org, code, { type: "start_voting", proposalIds: [proposal.id], durationSeconds: 60 });
   await phone.getByTestId("tab-vote").click();
   const voted = phone.waitForResponse((r) => r.url().endsWith("/vote") && r.ok());
-  await phone.locator(`[data-proposal-id="${proposal.id}"]`).click();
+  await phone.locator(`[data-testid="vote-card"][data-proposal-id="${proposal.id}"]`).click();
   await voted;
   await act(org, code, { type: "close_voting" });
 
@@ -72,6 +72,6 @@ test("feedback-only room for a site you don't own: feedback → vote → publish
   expect(body).toContain("Make the info link easier to find (top pick)");
   expect(body).toContain("On the site: home page");
   const csv = await (await org.get(`/api/admin/rooms/${code}/report?format=csv`)).text();
-  expect(csv.split("\r\n")[0]).toBe('"rank","proposal","votes","supporters","top_pick","description","requirements","quotes"');
+  expect(csv.split("\r\n")[0]).toBe('"rank","proposal","votes","swipe_likes","swipe_dislikes","supporters","top_pick","description","requirements","quotes"');
   expect((await phone.request.get(`${BASE}/api/admin/rooms/${code}/report`)).status()).toBe(401);
 });

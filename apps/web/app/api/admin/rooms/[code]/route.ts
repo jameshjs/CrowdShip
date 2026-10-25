@@ -1,6 +1,6 @@
 import {
   currentRound, db, latestAgentSessionForProposal, latestVerification, listDeadJobs, listFeedbackForAdmin,
-  listPreviewReviews, listProposals, listQueues, voteTallies, toPublicAgent,
+  listPreviewReviews, listProposals, listQueues, swipeTallies, voteTallies, toPublicAgent,
 } from "@crowdship/db";
 import { route } from "@/lib/api";
 import { requireRoomOrganizer } from "@/lib/auth";
@@ -48,6 +48,7 @@ export const GET = route<RoomCtx>(async (_req, ctx) => {
       ? (await db()<{ proposal_id: string }[]>`select proposal_id from round_proposals where round_id = ${round.id}`).map((r) => r.proposal_id)
       : [],
     tallies: Object.fromEntries(tallies.map((t) => [t.proposal_id, t.votes])),
+    approvals: Object.fromEntries((round ? await swipeTallies(round.id) : []).map((t) => [t.proposal_id, { likes: t.likes, dislikes: t.dislikes }])),
     feedback,
     proposals,
     agent,

@@ -13,6 +13,8 @@ export interface ResultsReport {
     description: string;
     requirements: string[];
     votes: number;
+    likes: number;
+    dislikes: number;
     supporters: number;
     winner: boolean;
     quotes: { nickname: string; text: string; where: string | null }[];
@@ -34,9 +36,11 @@ export async function buildResultsReport(roomId: string, roundNumber?: number): 
            (select count(*)::int from feedback where room_id = ${roomId} and moderation = 'visible') as feedback`;
   if (!round) return { projectName: room.project_name, website: room.production_url, roomCode: room.code, round: null, totals: { ...totals!, votes: 0 }, ranked: [] };
 
-  const rows = await sql<{ id: string; title: string; description: string; requirements_json: string[]; votes: number; supporters: number }[]>`
+  const rows = await sql<{ id: string; title: string; description: string; requirements_json: string[]; votes: number; likes: number; dislikes: number; supporters: number }[]>`
     select p.id, p.title, p.description, p.requirements_json,
       (select count(*)::int from votes v where v.round_id = ${round.id} and v.proposal_id = p.id) as votes,
+      (select count(*)::int from swipes w where w.round_id = ${round.id} and w.proposal_id = p.id and w.liked) as likes,
+      (select count(*)::int from swipes w where w.round_id = ${round.id} and w.proposal_id = p.id and not w.liked) as dislikes,
       (select count(distinct f.participant_id)::int from proposal_feedback pf join feedback f on f.id = pf.feedback_id
         where pf.proposal_id = p.id and f.moderation = 'visible') as supporters
     from round_proposals rp join proposals p on p.id = rp.proposal_id
@@ -60,6 +64,8 @@ export async function buildResultsReport(roomId: string, roundNumber?: number): 
       description: r.description,
       requirements: r.requirements_json,
       votes: r.votes,
+      likes: r.likes,
+      dislikes: r.dislikes,
       supporters: r.supporters,
       winner: r.id === round.winning_proposal_id,
       quotes: quotes.filter((q) => q.proposal_id === r.id).slice(0, 3).map((q) => ({ nickname: q.nickname, text: q.text, where: q.element_label })),
