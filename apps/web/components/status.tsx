@@ -83,7 +83,6 @@ export function Pipeline({ status, agent, vertical, large }: { status: RoundStat
         return (
           <li key={stage.key} className={cn("relative flex-1", vertical && "flex items-center gap-3")}>
             <motion.div
-              layout
               className={cn(
                 "flex items-center gap-2 rounded-xl border px-3 transition-colors duration-500",
                 large ? "py-4" : "py-2.5",

@@ -1,4 +1,4 @@
-import type { AgentProviderName, AgentState, CheckStatus, PreviewRating } from "@crowdship/shared";
+import { isAllowedPreviewUrl, type AgentProviderName, type AgentState, type CheckStatus, type PreviewRating } from "@crowdship/shared";
 import { db, type Sql } from "./client";
 import { badRequest, conflict, notFound } from "./errors";
 import { enqueue } from "./jobs";
@@ -274,7 +274,7 @@ export async function releasePreview(room: RoomRef, sessionId: string, previewUr
     }
     const url = previewUrl ?? s.preview_url;
     if (!url) throw badRequest("No preview URL yet. Paste the preview deployment URL.");
-    if (!/^https:\/\//.test(url)) throw badRequest("Preview URL must be https");
+    if (!isAllowedPreviewUrl(url)) throw badRequest("Preview URL must be https (or http://localhost for local testing)");
     await updateAgentSession(sessionId, { preview_url: url, status_detail: "Preview released to testers" }, sql);
     await sql`update agent_sessions set preview_released = true where id = ${sessionId}`;
     await activity(sql, room, "preview_released", { prNumber: s.pr_number });

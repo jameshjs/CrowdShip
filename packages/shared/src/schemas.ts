@@ -95,3 +95,8 @@ export const triagedProposalSchema = z.object({
   complexity: z.enum(["small", "medium", "large"]),
 });
 export type TriagedProposal = z.infer<typeof triagedProposalSchema>;
+
+/** Preview links shown to participants: https, or a localhost dev server for local testing. */
+export function isAllowedPreviewUrl(url: string): boolean {
+  return /^https:\/\//.test(url) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(\/|$)/.test(url);
+}

@@ -33,8 +33,7 @@ test("feedback is submitted in two taps and other participants see it live", asy
     await p.getByTestId("join-button").click();
     await expect(p).toHaveURL(new RegExp(`/room/${code}$`));
   }
-  await b.getByTestId("tab-activity").click();
-  await expect(b.getByTestId("activity-feed")).toBeVisible();
+  await expect(b.getByTestId("activity-feed")).toBeVisible(); // "Latest" on Home
 
   // Two taps for praise: tile, then send.
   await a.getByTestId("tab-feedback").click();

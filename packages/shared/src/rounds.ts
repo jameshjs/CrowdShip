@@ -65,3 +65,21 @@ export function pipelineStageFor(status: RoundStatus | null): PipelineStageKey {
       return "ideas";
   }
 }
+
+/** Participant-friendly progress: four plain steps instead of the six-stage engineering pipeline. */
+export function journeyStep(status: RoundStatus | null, previewReleased: boolean): { index: number; done: boolean } {
+  switch (status) {
+    case "voting":
+    case "selected":
+      return { index: 1, done: false };
+    case "developing":
+    case "verifying":
+      return { index: 2, done: false };
+    case "review_ready":
+      return previewReleased ? { index: 3, done: false } : { index: 2, done: false };
+    case "completed":
+      return { index: 3, done: true };
+    default:
+      return { index: 0, done: false };
+  }
+}

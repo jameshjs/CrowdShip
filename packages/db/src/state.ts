@@ -83,6 +83,7 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
     if (s) agent = toPublicAgent(s, await latestVerification(s.id, s.pr_head_sha));
     reviews = await previewReviewSummary(round.winning_proposal_id);
   }
+  const credits = round?.winning_proposal_id ? await winnerCredits(round.winning_proposal_id) : null;
 
   return {
     room: {
@@ -121,7 +122,30 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
       createdAt: a.created_at.toISOString(),
     })),
     reviews,
+    credits,
     history: history.map((h) => ({ roundNumber: h.number, title: h.title, status: h.status, prUrl: h.pr_url })),
     serverTime: new Date().toISOString(),
   };
+}
+
+/** Distinct participants whose visible feedback was merged into a proposal, earliest first. */
+export async function winnerCredits(proposalId: string, limit = 8): Promise<{ names: string[]; total: number } | null> {
+  const rows = await db()<{ participant_id: string; nickname: string }[]>`
+    select pa.id as participant_id, pa.nickname, min(f.created_at) as first_at
+    from proposal_feedback pf
+    join feedback f on f.id = pf.feedback_id and f.moderation = 'visible'
+    join participants pa on pa.id = f.participant_id
+    where pf.proposal_id = ${proposalId}
+    group by pa.id, pa.nickname
+    order by first_at`;
+  if (!rows.length) return null;
+  return { names: rows.slice(0, limit).map((r) => r.nickname), total: rows.length };
+}
+
+/** Whether this participant has visible feedback merged into the proposal. */
+export async function contributedTo(proposalId: string, participantId: string): Promise<boolean> {
+  const [row] = await db()`
+    select 1 from proposal_feedback pf join feedback f on f.id = pf.feedback_id
+    where pf.proposal_id = ${proposalId} and f.participant_id = ${participantId} and f.moderation = 'visible' limit 1`;
+  return Boolean(row);
 }

@@ -6,7 +6,7 @@ import { BROADCAST_EVENTS, type PublicRoomState } from "@crowdship/shared";
 import { api } from "./api";
 
 export type RoomStateWithMe = PublicRoomState & {
-  me: { participantId: string; nickname: string; vote: string | null; previewRating: string | null } | null;
+  me: { participantId: string; nickname: string; vote: string | null; previewRating: string | null; contributed: boolean } | null;
 };
 
 export type ConnectionStatus = "connecting" | "live" | "reconnecting" | "offline";

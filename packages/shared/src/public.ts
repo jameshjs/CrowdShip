@@ -80,6 +80,8 @@ export interface PublicRoomState {
   agent: PublicAgentSession | null;
   activity: PublicActivity[];
   reviews: { yes: number; no: number; needs_improvement: number };
+  /** People whose (visible) feedback became the winning proposal; nicknames are already public in the activity feed. */
+  credits: { names: string[]; total: number } | null;
   history: { roundNumber: number; title: string; status: RoundStatus; prUrl: string | null }[];
   serverTime: string;
 }
@@ -99,3 +101,14 @@ export const BROADCAST_EVENTS = {
   votes: "votes",
   activity: "activity",
 } as const;
+
+/** "Maya", "Maya and Ada", "Maya, Ada and Lee", "Maya, Ada and 4 others" */
+export function creditLine(credits: { names: string[]; total: number }, shown = 2): string {
+  const { names, total } = credits;
+  if (total <= shown + 1) {
+    const list = names.slice(0, total);
+    return list.length <= 1 ? (list[0] ?? "") : `${list.slice(0, -1).join(", ")} and ${list.at(-1)}`;
+  }
+  const rest = total - shown;
+  return `${names.slice(0, shown).join(", ")} and ${rest} other${rest === 1 ? "" : "s"}`;
+}

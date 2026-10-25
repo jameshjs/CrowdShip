@@ -40,7 +40,12 @@ test("complete flow in labeled demo mode: feedback → vote → agent → PR →
 
   await act(org, code, { type: "set_preview_url", agentSessionId: approved.agentSessionId, previewUrl: "https://example.com/preview" });
   await act(org, code, { type: "release_preview", agentSessionId: approved.agentSessionId });
-  await user.getByTestId("tab-explore").click();
+  // The climax: every phone gets the "it's live" moment, the projector shows the shipped banner.
+  await expect(user.getByTestId("ship-moment")).toBeVisible({ timeout: 15_000 });
+  await expect(user.getByTestId("ship-credit")).toBeVisible();
+  await expect(live.getByTestId("live-shipped")).toBeVisible();
+  await user.getByTestId("ship-rate").click();
+  await expect(user.getByTestId("ship-moment")).toBeHidden();
   await expect(user.getByTestId("preview-review")).toBeVisible({ timeout: 15_000 });
   await user.getByTestId("rate-yes").click({ timeout: 10_000 });
   await expect(user.getByText("Thanks, your rating is saved.")).toBeVisible();

@@ -8,6 +8,7 @@ import { ActivityRow } from "@/components/activity";
 import { agentStateLabel, CheckIcon, Countdown, DemoModeBadge, Pipeline, roundStatusLabel, useNow } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
 import { SailMark } from "@/components/brand";
+import { ShippedBanner } from "./shipped-banner";
 import { cn } from "@/lib/utils";
 
 export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: string; joinUrl: string }) {
@@ -65,6 +66,8 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
             )}
           </div>
         </section>
+
+        <ShippedBanner state={state} />
 
         {/* pipeline */}
         <section className="glass rounded-2xl border border-line p-5">

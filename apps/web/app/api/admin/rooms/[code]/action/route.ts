@@ -6,7 +6,7 @@ import {
   setFeedbackModeration, setProposalStatus, setQueuePaused, setTriaging, splitFeedback, startVoting, stateChanged,
   updateAgentSession, updateRoomSettings, db, badRequest,
 } from "@crowdship/db";
-import { proposalEditInput, QUEUES } from "@crowdship/shared";
+import { isAllowedPreviewUrl, proposalEditInput, QUEUES } from "@crowdship/shared";
 import { assertSameOrigin, parseJson, route } from "@/lib/api";
 import { requireRoomOrganizer } from "@/lib/auth";
 import { roomCode, type RoomCtx } from "@/lib/room-params";
@@ -33,7 +33,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("cancel_agent"), agentSessionId: uuid }),
   z.object({ type: z.literal("reconcile_agent"), agentSessionId: uuid }),
   z.object({ type: z.literal("recheck_verification"), agentSessionId: uuid }),
-  z.object({ type: z.literal("set_preview_url"), agentSessionId: uuid, previewUrl: z.url().startsWith("https://") }),
+  z.object({ type: z.literal("set_preview_url"), agentSessionId: uuid, previewUrl: z.url().refine(isAllowedPreviewUrl, "Must start with https:// (or http://localhost for local testing)") }),
   z.object({ type: z.literal("release_preview"), agentSessionId: uuid }),
   z.object({ type: z.literal("complete_round") }),
   z.object({

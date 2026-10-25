@@ -1,7 +1,8 @@
 import {
   activity, casAgentState, db, enqueue, failAgentSession, getAgentSession, getProposal, getRoomById, PermanentJobError,
-  recordMetric, updateAgentSession, type AgentSessionRow, type Job, type RoomRow,
+  recordMetric, updateAgentSession, winnerCredits, type AgentSessionRow, type Job, type RoomRow,
 } from "@crowdship/db";
+import { creditLine } from "@crowdship/shared";
 import { buildTaskPrompt, DefiniteFailure, ProviderConfigError, UncertainOutcome, type AgentSession, type CodingTask } from "@crowdship/integrations";
 import { log } from "../log";
 import type { Deps } from "../providers";
@@ -46,6 +47,7 @@ async function ensureIssue(deps: Deps, room: RoomRow, s: AgentSessionRow): Promi
   const gh = deps.github();
   if (!gh) throw new ProviderConfigError("GITHUB_TOKEN is not set; cannot create the GitHub issue for a real agent run");
   const p = await getProposal(room.id, s.proposal_id);
+  const credits = await winnerCredits(p.id);
   const body = [
     p.description,
     "",
@@ -56,6 +58,7 @@ async function ensureIssue(deps: Deps, room: RoomRow, s: AgentSessionRow): Promi
     ...p.acceptance_criteria_json.map((r) => `- [ ] ${r}`),
     "",
     `_Chosen by audience vote in CrowdShip room ${room.code} and approved by the organizer._`,
+    ...(credits ? [`_Ideas from: ${creditLine(credits)}._`] : []),
     `CrowdShip: ${s.idempotency_tag}`,
   ].join("\n");
   // Idempotency: if a previous attempt created the issue but crashed before saving, find it by tag.
