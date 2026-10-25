@@ -1,14 +1,15 @@
 import { Check } from "lucide-react";
-import { journeyStep, type RoundStatus } from "@crowdship/shared";
+import { journeyStep, type RoomMode, type RoundStatus } from "@crowdship/shared";
 import { cn } from "@/lib/utils";
 
-const STEPS = ["Ideas", "Vote", "Build", "Try it"] as const;
+const STEPS = { build: ["Ideas", "Vote", "Build", "Try it"], feedback: ["Ideas", "Vote", "Results"] } as const;
 
-export function Journey({ status, previewReleased }: { status: RoundStatus | null; previewReleased: boolean }) {
-  const { index, done } = journeyStep(status, previewReleased);
+export function Journey({ status, previewReleased, mode = "build" }: { status: RoundStatus | null; previewReleased: boolean; mode?: RoomMode }) {
+  const { index, done } = journeyStep(status, previewReleased, mode);
+  const steps = STEPS[mode];
   return (
-    <ol className="grid grid-cols-4 gap-1.5" aria-label="Round progress" data-testid="journey">
-      {STEPS.map((label, i) => {
+    <ol className={cn("grid gap-1.5", steps.length === 3 ? "grid-cols-3" : "grid-cols-4")} aria-label="Round progress" data-testid="journey">
+      {steps.map((label, i) => {
         const complete = done || i < index;
         const current = !done && i === index;
         return (

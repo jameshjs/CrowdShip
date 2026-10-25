@@ -5,10 +5,17 @@ import { ExternalLink } from "lucide-react";
 import { Button, type ButtonProps } from "@/components/ui/button";
 import { api } from "@/lib/client/api";
 
-/** Opens the app under test with a short-lived widget token so in-app feedback is attributed to this participant. */
-export function TryAppButton({ code, url, children, ...props }: { code: string; url: string } & ButtonProps) {
+/**
+ * Opens the app under test with a short-lived widget token so in-app feedback is attributed to this participant.
+ * `external`: a site we don't own (feedback-only rooms). Open it plainly: never hand our token to a third party.
+ */
+export function TryAppButton({ code, url, external, children, ...props }: { code: string; url: string; external?: boolean } & ButtonProps) {
   const [busy, setBusy] = useState(false);
   async function open() {
+    if (external) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
     setBusy(true);
     const win = window.open("about:blank", "_blank");
     try {

@@ -212,6 +212,20 @@ export async function completeRound(room: RoomRef): Promise<void> {
   });
 }
 
+/** Feedback-only rooms: the winner is final. Publish the results and open the next round. */
+export async function publishResults(room: RoomRef & { mode: "build" | "feedback" }): Promise<void> {
+  if (room.mode !== "feedback") throw conflict("not_feedback_room", "Only feedback-only sessions publish results; agent sessions ship a change");
+  await db().begin(async (sql) => {
+    const round = await lockOpenRound(sql, room.id);
+    if (round.status !== "selected" || !round.winning_proposal_id) throw conflict("no_winner", "Close voting and pick a winner first");
+    await transition(sql, round, "completed", { closed_at: new Date() });
+    await sql`update proposals set status = 'completed', updated_at = now() where id = ${round.winning_proposal_id}`;
+    await openNextRound(sql, room.id, round.number);
+    const [p] = await sql<{ title: string }[]>`select title from proposals where id = ${round.winning_proposal_id}`;
+    await activity(sql, room, "results_published", { roundNumber: round.number, title: p?.title ?? null });
+  });
+}
+
 async function openNextRound(sql: Sql, roomId: string, lastNumber: number) {
   await sql`insert into voting_rounds (room_id, number, status) values (${roomId}, ${lastNumber + 1}, 'collecting')`;
 }

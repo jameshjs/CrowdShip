@@ -72,6 +72,8 @@ export function describeActivity(a: PublicActivity): { icon: React.ElementType; 
       return { icon: Star, text: `Someone rated the preview: ${p.rating === "yes" ? "improved" : p.rating === "no" ? "not improved" : "needs work"}`, tone: "neutral" };
     case "round_completed":
       return { icon: CheckCircle2, text: `Round complete: "${s(p.title)}" shipped to review`, tone: "accent" };
+    case "results_published":
+      return { icon: Trophy, text: `Results published: "${s(p.title)}" is the crowd's top pick`, tone: "success" };
     case "round_cancelled":
       return { icon: XCircle, text: `Round ${n(p.roundNumber)} cancelled`, tone: "warn" };
     case "round_failed":

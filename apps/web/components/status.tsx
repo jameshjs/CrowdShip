@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { FlaskConical, Check, Loader2, X, Minus } from "lucide-react";
 import type { AgentState, CheckStatus, PublicAgentSession, RoundStatus } from "@crowdship/shared";
-import { PIPELINE_STAGES, pipelineStageFor, PROVIDER_LABELS } from "@crowdship/shared";
+import { pipelineStageFor, pipelineStagesFor, PROVIDER_LABELS, type RoomMode } from "@crowdship/shared";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -68,14 +68,15 @@ export function CheckIcon({ status, className }: { status: CheckStatus; classNam
 }
 
 /** The development cycle. Stage reflects the real round state from the server. */
-export function Pipeline({ status, agent, vertical, large }: { status: RoundStatus | null; agent: PublicAgentSession | null; vertical?: boolean; large?: boolean }) {
-  const current = pipelineStageFor(status);
-  const idx = PIPELINE_STAGES.findIndex((s) => s.key === current);
+export function Pipeline({ status, agent, vertical, large, mode = "build" }: { status: RoundStatus | null; agent: PublicAgentSession | null; vertical?: boolean; large?: boolean; mode?: RoomMode }) {
+  const stages = pipelineStagesFor(mode);
+  const current = pipelineStageFor(status, mode);
+  const idx = stages.findIndex((s) => s.key === current);
   const failed = agent?.state === "failed" || (agent?.verification?.ciStatus === "fail" && status === "verifying");
   const done = status === "completed";
   return (
     <ol className={cn("flex", vertical ? "flex-col gap-2" : "items-stretch gap-2")} aria-label="Development pipeline">
-      {PIPELINE_STAGES.map((stage, i) => {
+      {stages.map((stage, i) => {
         const isActive = i === idx && !done;
         const isDone = i < idx || done;
         const isFailed = isActive && failed;

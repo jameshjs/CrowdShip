@@ -1,4 +1,4 @@
-import { getAgentSession, getRoomById, latestVerification, recordMetric, recordPullRequest, recordVerification, rescheduleJob, updateAgentSession, db, type Job } from "@crowdship/db";
+import { getAgentSession, getRoomById, requireBuildRoom, latestVerification, recordMetric, recordPullRequest, recordVerification, rescheduleJob, updateAgentSession, db, type Job } from "@crowdship/db";
 import { REQUIRED_CHECKS, type CheckStatus } from "@crowdship/shared";
 import { log } from "../log";
 import type { Deps } from "../providers";
@@ -29,7 +29,7 @@ export async function handleVerification(job: Job<{ agentSessionId: string; sha:
   };
   const s = await getAgentSession(job.payload.agentSessionId);
   if (s.pr_head_sha !== job.payload.sha || ["failed", "cancelled"].includes(s.state)) return "done";
-  const room = await getRoomById(s.room_id);
+  const room = requireBuildRoom(await getRoomById(s.room_id));
   const v = await latestVerification(s.id, job.payload.sha);
   const started = v?.created_at.getTime() ?? Date.now();
 

@@ -5,7 +5,7 @@ export const ROUND_TRANSITIONS: Record<RoundStatus, readonly RoundStatus[]> = {
   collecting: ["triaging", "voting", "cancelled"],
   triaging: ["collecting", "voting", "cancelled"],
   voting: ["selected", "collecting", "cancelled"],
-  selected: ["developing", "voting", "cancelled"],
+  selected: ["developing", "completed", "voting", "cancelled"], // completed: feedback-only rooms publish results
   developing: ["verifying", "failed", "cancelled"],
   verifying: ["review_ready", "developing", "failed", "cancelled"],
   review_ready: ["completed", "verifying", "failed", "cancelled"],
@@ -41,9 +41,21 @@ export const PIPELINE_STAGES = [
   { key: "ci", label: "CI verification" },
   { key: "review", label: "Ready for review" },
 ] as const;
-export type PipelineStageKey = (typeof PIPELINE_STAGES)[number]["key"];
+/** Feedback-only rooms: no build; the round ends with published results. */
+export const FEEDBACK_PIPELINE_STAGES = [
+  { key: "ideas", label: "Ideas received" },
+  { key: "triage", label: "AI triage" },
+  { key: "vote", label: "Community vote" },
+  { key: "results", label: "Results" },
+] as const;
+export type PipelineStageKey = (typeof PIPELINE_STAGES)[number]["key"] | (typeof FEEDBACK_PIPELINE_STAGES)[number]["key"];
 
-export function pipelineStageFor(status: RoundStatus | null): PipelineStageKey {
+export function pipelineStagesFor(mode: "build" | "feedback") {
+  return mode === "feedback" ? FEEDBACK_PIPELINE_STAGES : PIPELINE_STAGES;
+}
+
+export function pipelineStageFor(status: RoundStatus | null, mode: "build" | "feedback" = "build"): PipelineStageKey {
+  if (mode === "feedback" && (status === "selected" || status === "completed")) return "results";
   switch (status) {
     case null:
     case "collecting":
@@ -67,7 +79,14 @@ export function pipelineStageFor(status: RoundStatus | null): PipelineStageKey {
 }
 
 /** Participant-friendly progress: four plain steps instead of the six-stage engineering pipeline. */
-export function journeyStep(status: RoundStatus | null, previewReleased: boolean): { index: number; done: boolean } {
+export function journeyStep(status: RoundStatus | null, previewReleased: boolean, mode: "build" | "feedback" = "build"): { index: number; done: boolean } {
+  if (mode === "feedback") {
+    // Ideas, Vote, Results
+    if (status === "voting") return { index: 1, done: false };
+    if (status === "selected") return { index: 2, done: false };
+    if (status === "completed") return { index: 2, done: true };
+    return { index: 0, done: false };
+  }
   switch (status) {
     case "voting":
     case "selected":

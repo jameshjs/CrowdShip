@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   approveForDevelopment, attachFeedbackToProposal, audit, cancelAgentSession, cancelRound, chooseWinner, closeVoting,
-  completeRound, createOrganizerProposal, editProposal, enqueue, failRound, getAgentSession, insertSeedProposals,
+  completeRound, publishResults, createOrganizerProposal, editProposal, enqueue, failRound, getAgentSession, insertSeedProposals,
   mergeProposals, moveFeedback, releasePreview, reopenVoting, retryDeadJob,
   setFeedbackModeration, setProposalStatus, setQueuePaused, setTriaging, splitFeedback, startVoting, stateChanged,
   updateAgentSession, updateRoomSettings, db, badRequest,
@@ -36,6 +36,7 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("set_preview_url"), agentSessionId: uuid, previewUrl: z.url().refine(isAllowedPreviewUrl, "Must start with https:// (or http://localhost for local testing)") }),
   z.object({ type: z.literal("release_preview"), agentSessionId: uuid }),
   z.object({ type: z.literal("complete_round") }),
+  z.object({ type: z.literal("publish_results") }),
   z.object({
     type: z.literal("settings"),
     maxAcuPerSession: z.number().int().min(1).max(100).optional(),
@@ -129,6 +130,8 @@ async function perform(room: Awaited<ReturnType<typeof requireRoomOrganizer>>["r
       return releasePreview(room, a.agentSessionId, null);
     case "complete_round":
       return completeRound(room);
+    case "publish_results":
+      return publishResults(room);
     case "settings":
       await updateRoomSettings(room.id, a);
       await stateChanged(db(), room.code, "settings");

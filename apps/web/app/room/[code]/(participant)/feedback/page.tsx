@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Bug, HelpCircle, Lightbulb, Heart, Send, Check, X } from "lucide-react";
 import type { FeedbackType } from "@crowdship/shared";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { api } from "@/lib/client/api";
 import { browserName, deviceCategory } from "@/lib/client/device";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,9 @@ const QUICK: { type: FeedbackType; label: string; hint: string; icon: React.Elem
 ];
 
 export default function FeedbackPage() {
-  const { code } = useRoomCtx();
+  const { code, state } = useRoomCtx();
+  const feedbackMode = state?.room.mode === "feedback";
+  const [location, setLocation] = useState("");
   const [selected, setSelected] = useState<(typeof QUICK)[number] | null>(null);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,12 +39,14 @@ export default function FeedbackPage() {
       const res = await api<{ held: boolean }>(`/api/rooms/${code}/feedback`, {
         type: selected.type,
         text: text.trim(),
+        location: feedbackMode && location.trim() ? location.trim() : undefined,
         deviceCategory: deviceCategory(),
         browser: browserName(),
       });
       setSent(res);
       setSelected(null);
       setText("");
+      setLocation("");
       setTimeout(() => setSent(null), 3500);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not send");
@@ -124,6 +128,15 @@ export default function FeedbackPage() {
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void send();
                 }}
               />
+              {feedbackMode && (
+                <Input
+                  data-testid="feedback-location"
+                  maxLength={120}
+                  placeholder="Where on the site? (optional, e.g. checkout page)"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                />
+              )}
               {error && <p className="text-sm text-danger" role="alert">{error}</p>}
               <Button size="lg" className="w-full" onClick={send} disabled={!canSend || busy} data-testid="feedback-submit">
                 {busy ? "Sending…" : "Send"} <Send className="h-4 w-4" />
@@ -134,7 +147,9 @@ export default function FeedbackPage() {
       </AnimatePresence>
 
       <p className="text-xs text-fg-subtle">
-        Tip: open <span className="text-fg-muted">Try the app</span> and tap the feedback button there to point at a specific part of the screen.
+        {feedbackMode
+          ? <>Tip: open the website from <span className="text-fg-muted">Home</span>, look around, then come back here. Say which page you mean.</>
+          : <>Tip: open <span className="text-fg-muted">Try the app</span> and tap the feedback button there to point at a specific part of the screen.</>}
       </p>
     </div>
   );

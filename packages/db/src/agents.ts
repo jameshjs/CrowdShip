@@ -66,7 +66,8 @@ export async function latestAgentSessionForProposal(proposalId: string): Promise
  * agent session (partial unique index) and one launch job (idempotency key).
  * Double-clicks and concurrent requests collapse to the same session.
  */
-export async function approveForDevelopment(room: RoomRef & { agent_provider: AgentProviderName }, actor: string) {
+export async function approveForDevelopment(room: RoomRef & { agent_provider: AgentProviderName; mode?: "build" | "feedback" }, actor: string) {
+  if (room.mode === "feedback") throw conflict("feedback_only", "This is a feedback-only session: there is no coding agent. Publish the results instead.");
   return db().begin(async (sql) => {
     const [round] = await sql<RoundRow[]>`
       select * from voting_rounds where room_id = ${room.id} and status not in ('completed','failed','cancelled') for update`;

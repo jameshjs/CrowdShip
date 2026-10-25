@@ -1,8 +1,8 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import { Bot, ExternalLink, GitPullRequest, Eye, MessageSquare, Lightbulb, Users, Vote, Wifi, WifiOff, Star } from "lucide-react";
-import { PROVIDER_LABELS } from "@crowdship/shared";
+import { Bot, ExternalLink, Trophy, GitPullRequest, Eye, MessageSquare, Lightbulb, Users, Vote, Wifi, WifiOff, Star } from "lucide-react";
+import { creditLine, PROVIDER_LABELS, type PublicRoomState } from "@crowdship/shared";
 import { useRoom } from "@/lib/client/use-room";
 import { ActivityRow } from "@/components/activity";
 import { agentStateLabel, CheckIcon, Countdown, DemoModeBadge, Pipeline, roundStatusLabel, useNow } from "@/components/status";
@@ -71,7 +71,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
 
         {/* pipeline */}
         <section className="glass rounded-2xl border border-line p-5">
-          <Pipeline status={round?.status ?? null} agent={agent} large />
+          <Pipeline status={round?.status ?? null} agent={agent} large mode={state.room.mode} />
         </section>
 
         <section className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1.1fr_1fr_0.9fr]">
@@ -107,7 +107,8 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
             )}
           </div>
 
-          {/* agent */}
+          {/* agent, or results for feedback-only rooms */}
+          {state.room.mode === "feedback" ? <FeedbackResults state={state} /> : (
           <div className="glass flex flex-col gap-4 rounded-2xl border border-line p-5">
             <h2 className="text-sm uppercase tracking-[0.15em] text-fg-subtle">Agent execution</h2>
             {agent ? (
@@ -168,6 +169,8 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
             )}
           </div>
 
+          )}
+
           {/* activity */}
           <div className="glass flex min-h-0 flex-col rounded-2xl border border-line p-5">
             <h2 className="mb-2 text-sm uppercase tracking-[0.15em] text-fg-subtle">Live activity</h2>
@@ -194,6 +197,41 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
           </footer>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Feedback-only rooms: what happens with the result, and the last published top pick. */
+function FeedbackResults({ state }: { state: PublicRoomState }) {
+  const { round } = state;
+  const winner = state.proposals.find((p) => p.id === round?.winningProposalId);
+  const last = state.history.find((h) => h.status === "completed");
+  return (
+    <div className="glass flex flex-col gap-4 rounded-2xl border border-line p-5" data-testid="live-results">
+      <h2 className="text-sm uppercase tracking-[0.15em] text-fg-subtle">Results</h2>
+      {winner ? (
+        <>
+          <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-accent"><Trophy className="h-4 w-4" aria-hidden /> Top pick</p>
+          <p className="text-4xl font-bold leading-tight text-balance"><span className="text-brand-gradient">{winner.title}</span></p>
+          <p className="text-lg text-fg-muted tabular">
+            {winner.votes} {winner.votes === 1 ? "vote" : "votes"}
+            {state.credits ? <> · ideas from {creditLine(state.credits, 3)}</> : null}
+          </p>
+          <p className="text-fg-muted">The organizer sends the ranked results, with your words, to the site&apos;s team.</p>
+        </>
+      ) : (
+        <p className="text-lg text-fg-muted">
+          Feedback-only session for{" "}
+          <span className="font-mono text-fg">{state.room.productionUrl?.replace(/^https?:\/\//, "") ?? "this site"}</span>.
+          The top-voted ideas are published as a report for the site&apos;s team.
+        </p>
+      )}
+      {last && !winner && (
+        <div className="mt-auto rounded-xl border border-line bg-bg-sunken p-4">
+          <p className="text-xs uppercase tracking-wide text-fg-subtle">Round {last.roundNumber} result</p>
+          <p className="mt-1 text-xl font-semibold">{last.title}</p>
+        </div>
+      )}
     </div>
   );
 }

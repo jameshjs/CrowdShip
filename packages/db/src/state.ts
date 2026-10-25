@@ -94,7 +94,8 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
       repository: room.github_repository,
       productionUrl: room.production_url,
       provider: room.agent_provider,
-      demoMode: room.agent_provider === "mock",
+      mode: room.mode,
+      demoMode: room.mode === "build" && room.agent_provider === "mock",
     },
     stats: {
       participants: stats[0]!.participants,

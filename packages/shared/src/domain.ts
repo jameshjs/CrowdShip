@@ -41,3 +41,7 @@ export const PROVIDER_LABELS: Record<AgentProviderName, string> = {
   devin: "Devin",
   claude_code_action: "Claude Code",
 };
+
+/** "build": a coding agent implements the winner. "feedback": any website; the round ends with published results. */
+export const ROOM_MODES = ["build", "feedback"] as const;
+export type RoomMode = (typeof ROOM_MODES)[number];

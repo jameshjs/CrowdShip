@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import {
-  activity, db, failAgentSession, getAgentSession, getRoomById, recordMetric, recordPullRequest, rescheduleJob,
+  activity, db, failAgentSession, getAgentSession, getRoomById, requireBuildRoom, recordMetric, recordPullRequest, rescheduleJob,
   stateChanged, updateAgentSession, type Job,
 } from "@crowdship/db";
 import { parsePullUrl } from "@crowdship/integrations";
@@ -17,7 +17,7 @@ const NO_PR_AFTER_FINISH_MS = 5 * 60_000;
 export async function handleMonitor(job: Job<{ agentSessionId: string }>, deps: Deps): Promise<"done" | "rescheduled"> {
   const s = await getAgentSession(job.payload.agentSessionId);
   if (["failed", "cancelled"].includes(s.state)) return "done";
-  const room = await getRoomById(s.room_id);
+  const room = requireBuildRoom(await getRoomById(s.room_id));
   const poll = s.provider === "mock" ? MOCK_POLL_MS : POLL_MS;
   if (!s.provider_session_id) {
     // Launch is still being reconciled by the coding-agent queue.

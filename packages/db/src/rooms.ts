@@ -1,8 +1,9 @@
-import type { AgentProviderName } from "@crowdship/shared";
+import type { AgentProviderName, RoomMode } from "@crowdship/shared";
 import { randomInt } from "node:crypto";
 import { db, type Sql } from "./client";
 import { notFound } from "./errors";
 import { activity } from "./realtime";
+import { PermanentJobError } from "./jobs";
 import { DEMO_SEED_PROPOSALS } from "./seed-data";
 
 export interface RoomRow {
@@ -11,13 +12,14 @@ export interface RoomRow {
   code: string;
   status: "active" | "closed";
   agent_provider: AgentProviderName;
+  mode: RoomMode;
   max_acu_per_session: number;
   max_sessions_total: number;
   agent_paused: boolean;
   created_at: Date;
   project_name: string;
   project_description: string;
-  github_repository: string;
+  github_repository: string | null;
   production_url: string | null;
   organizer_id: string;
 }
@@ -53,7 +55,8 @@ export async function createRoom(input: {
   organizerId: string;
   projectName: string;
   description: string;
-  githubRepository: string;
+  mode?: RoomMode;
+  githubRepository?: string;
   productionUrl?: string;
   agentProvider: AgentProviderName;
   maxAcuPerSession: number;
@@ -62,13 +65,13 @@ export async function createRoom(input: {
   return db().begin(async (sql) => {
     const [project] = await sql<{ id: string }[]>`
       insert into projects (name, description, github_repository, production_url, organizer_id)
-      values (${input.projectName}, ${input.description}, ${input.githubRepository}, ${input.productionUrl ?? null}, ${input.organizerId})
+      values (${input.projectName}, ${input.description}, ${input.githubRepository ?? null}, ${input.productionUrl ?? null}, ${input.organizerId})
       returning id`;
     let roomId: string | undefined;
     for (let attempt = 0; attempt < 5 && !roomId; attempt++) {
       const rows = await sql<{ id: string }[]>`
-        insert into rooms (project_id, code, agent_provider, max_acu_per_session)
-        values (${project!.id}, ${generateRoomCode()}, ${input.agentProvider}, ${input.maxAcuPerSession})
+        insert into rooms (project_id, code, agent_provider, mode, max_acu_per_session)
+        values (${project!.id}, ${generateRoomCode()}, ${input.agentProvider}, ${input.mode ?? "build"}, ${input.maxAcuPerSession})
         on conflict (code) do nothing returning id`;
       roomId = rows[0]?.id;
     }
@@ -91,8 +94,8 @@ export async function insertSeedProposals(sql: Sql, roomId: string): Promise<voi
 }
 
 export async function listRoomsForOrganizer(organizerId: string) {
-  return db()<{ code: string; project_name: string; status: string; agent_provider: AgentProviderName; created_at: Date }[]>`
-    select r.code, p.name as project_name, r.status, r.agent_provider, r.created_at
+  return db()<{ code: string; project_name: string; status: string; agent_provider: AgentProviderName; mode: RoomMode; created_at: Date }[]>`
+    select r.code, p.name as project_name, r.status, r.agent_provider, r.mode, r.created_at
     from rooms r join projects p on p.id = r.project_id
     where p.organizer_id = ${organizerId}
     order by r.created_at desc limit 50`;
@@ -153,4 +156,15 @@ const ADJECTIVES = ["Swift", "Brave", "Clever", "Sunny", "Cosmic", "Quiet", "Luc
 const ANIMALS = ["Otter", "Falcon", "Panda", "Lynx", "Koala", "Heron", "Fox", "Gecko", "Orca", "Badger", "Moth", "Yak"];
 export function generateNickname(): string {
   return `${ADJECTIVES[randomInt(ADJECTIVES.length)]} ${ANIMALS[randomInt(ANIMALS.length)]}`;
+}
+
+/** An agent ("build") room: always has an approved repository. */
+export type BuildRoom = RoomRow & { mode: "build"; github_repository: string };
+
+/** Agent/verification jobs only run for build rooms; anything else is a permanent job failure. */
+export function requireBuildRoom(room: RoomRow): BuildRoom {
+  if (room.mode !== "build" || !room.github_repository) {
+    throw new PermanentJobError(`Room ${room.code} is a feedback-only session: no repository or coding agent`);
+  }
+  return room as BuildRoom;
 }

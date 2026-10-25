@@ -1,6 +1,6 @@
 import {
-  activity, casAgentState, db, enqueue, failAgentSession, getAgentSession, getProposal, getRoomById, PermanentJobError,
-  recordMetric, updateAgentSession, winnerCredits, type AgentSessionRow, type Job, type RoomRow,
+  activity, casAgentState, db, enqueue, failAgentSession, getAgentSession, getProposal, getRoomById, requireBuildRoom, PermanentJobError,
+  recordMetric, updateAgentSession, winnerCredits, type AgentSessionRow, type BuildRoom, type Job, type RoomRow,
 } from "@crowdship/db";
 import { creditLine } from "@crowdship/shared";
 import { buildTaskPrompt, DefiniteFailure, ProviderConfigError, UncertainOutcome, type AgentSession, type CodingTask } from "@crowdship/integrations";
@@ -14,7 +14,7 @@ export function branchFor(s: AgentSessionRow): string {
   return `crowdship/${s.idempotency_tag}`;
 }
 
-async function buildTask(room: RoomRow, s: AgentSessionRow): Promise<CodingTask> {
+async function buildTask(room: BuildRoom, s: AgentSessionRow): Promise<CodingTask> {
   const p = await getProposal(room.id, s.proposal_id);
   const prompt =
     s.task_prompt ??
@@ -42,7 +42,7 @@ async function buildTask(room: RoomRow, s: AgentSessionRow): Promise<CodingTask>
 }
 
 /** Create the GitHub issue once. Real providers require GitHub; mock rooms skip it. */
-async function ensureIssue(deps: Deps, room: RoomRow, s: AgentSessionRow): Promise<AgentSessionRow> {
+async function ensureIssue(deps: Deps, room: BuildRoom, s: AgentSessionRow): Promise<AgentSessionRow> {
   if (s.github_issue_number || s.provider === "mock") return s;
   const gh = deps.github();
   if (!gh) throw new ProviderConfigError("GITHUB_TOKEN is not set; cannot create the GitHub issue for a real agent run");
@@ -94,7 +94,7 @@ async function markLaunched(room: RoomRow, s: AgentSessionRow, sess: AgentSessio
  */
 export async function handleCodingAgent(job: Job<{ agentSessionId: string }>, deps: Deps): Promise<"done" | "retry"> {
   let s = await getAgentSession(job.payload.agentSessionId);
-  const room = await getRoomById(s.room_id);
+  const room = requireBuildRoom(await getRoomById(s.room_id));
   if (!["queued", "launching", "needs_reconcile"].includes(s.state)) return "done";
   if (room.agent_paused) throw new Error("Agent launches are paused for this room");
 
@@ -166,6 +166,6 @@ export async function handleCodingAgent(job: Job<{ agentSessionId: string }>, de
 export async function onCodingAgentDead(job: Job<{ agentSessionId: string }>) {
   const s = await getAgentSession(job.payload.agentSessionId);
   if (["failed", "cancelled", "running", "pr_opened", "finished"].includes(s.state)) return;
-  const room = await getRoomById(s.room_id);
+  const room = requireBuildRoom(await getRoomById(s.room_id));
   await failAgentSession(room, s.id, `Launch failed after ${job.attempts} attempts: ${job.last_error ?? "unknown error"}`);
 }

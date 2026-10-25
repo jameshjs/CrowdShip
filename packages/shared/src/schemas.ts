@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { AGENT_PROVIDERS, COMPLEXITIES, FEEDBACK_TYPES, PREVIEW_RATINGS } from "./domain";
+import { AGENT_PROVIDERS, COMPLEXITIES, FEEDBACK_TYPES, PREVIEW_RATINGS, ROOM_MODES } from "./domain";
 
 export const roomCodeSchema = z
   .string()
@@ -42,6 +42,8 @@ export const feedbackInput = z
     elementIdentifier: z.string().max(200).optional(),
     elementLabel: z.string().max(200).optional(),
     region: feedbackRegion.optional(),
+    /** Feedback-only rooms: free-text "where on the site?" (the widget can't run on sites you don't own). */
+    location: z.string().trim().max(120).optional(),
     applicationVersion: z.string().max(40).optional(),
     deviceCategory: z.enum(["mobile", "tablet", "desktop", "unknown"]).optional(),
     browser: z.string().max(60).optional(),
@@ -66,15 +68,24 @@ export const previewReviewInput = z.object({
   comment: z.string().max(500).default(""),
 });
 
-export const createRoomInput = z.object({
-  projectName: z.string().trim().min(1).max(80),
-  description: z.string().trim().max(500).default(""),
-  githubRepository: z.string().trim().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/, "owner/repo"),
-  productionUrl: z.url().optional().or(z.literal("").transform(() => undefined)),
-  agentProvider: z.enum(AGENT_PROVIDERS),
-  maxAcuPerSession: z.coerce.number().int().min(1).max(100).default(10),
-  loadDemoSeed: z.boolean().default(true),
-});
+export const createRoomInput = z
+  .object({
+    mode: z.enum(ROOM_MODES).default("build"),
+    projectName: z.string().trim().min(1).max(80),
+    description: z.string().trim().max(500).default(""),
+    githubRepository: z.string().trim().regex(/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/, "owner/repo").optional()
+      .or(z.literal("").transform(() => undefined)),
+    productionUrl: z.url().optional().or(z.literal("").transform(() => undefined)),
+    agentProvider: z.enum(AGENT_PROVIDERS).default("mock"),
+    maxAcuPerSession: z.coerce.number().int().min(1).max(100).default(10),
+    loadDemoSeed: z.boolean().default(true),
+  })
+  .superRefine((v, ctx) => {
+    if (v.mode === "build" && !v.githubRepository) ctx.addIssue({ code: "custom", path: ["githubRepository"], message: "Required for agent sessions (owner/repo)" });
+    if (v.mode === "feedback" && !v.productionUrl) ctx.addIssue({ code: "custom", path: ["productionUrl"], message: "Enter the website people will review" });
+  })
+  // Feedback sessions never touch a repository or launch an agent.
+  .transform((v) => (v.mode === "feedback" ? { ...v, githubRepository: undefined, agentProvider: "mock" as const, loadDemoSeed: false } : v));
 
 export const proposalEditInput = z.object({
   title: z.string().trim().min(1).max(120),

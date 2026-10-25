@@ -11,3 +11,4 @@ export * from "./rounds";
 export * from "./agents";
 export * from "./state";
 export * from "./seed-data";
+export * from "./report";

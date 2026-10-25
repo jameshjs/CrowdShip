@@ -25,7 +25,7 @@ type Feedback = {
   region: { x: number; y: number; w: number; h: number; pageW: number; pageH: number; points: [number, number][] } | null;
 };
 type AdminState = {
-  room: { code: string; projectName: string; repository: string; productionUrl: string | null; provider: AgentProviderName; maxAcuPerSession: number; maxSessionsTotal: number; agentPaused: boolean };
+  room: { code: string; projectName: string; repository: string | null; mode: "build" | "feedback"; productionUrl: string | null; provider: AgentProviderName; maxAcuPerSession: number; maxSessionsTotal: number; agentPaused: boolean };
   round: { id: string; number: number; status: RoundStatus; ends_at: string | null; winning_proposal_id: string | null } | null;
   roundProposalIds: string[];
   tallies: Record<string, number>;
@@ -77,7 +77,8 @@ export function OrganizerDashboard({ code, qrSvg, joinUrl }: { code: string; qrS
 
   if (!s) return <div className="p-10 text-fg-muted">{error ?? "Loading…"}</div>;
   const round = s.round;
-  const demo = s.room.provider === "mock";
+  const feedbackMode = s.room.mode === "feedback";
+  const demo = !feedbackMode && s.room.provider === "mock";
 
   return (
     <main className="mx-auto max-w-7xl space-y-5 px-5 py-6">
@@ -86,9 +87,9 @@ export function OrganizerDashboard({ code, qrSvg, joinUrl }: { code: string; qrS
           <Link href="/admin" className="text-sm text-fg-subtle hover:text-fg">← Sessions</Link>
           <h1 className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">
             {s.room.projectName} <span className="font-mono text-accent">{code}</span>
-            {demo ? <DemoModeBadge /> : <Badge tone="info">{PROVIDER_LABELS[s.room.provider]}</Badge>}
+            {feedbackMode ? <Badge tone="success">Feedback only</Badge> : demo ? <DemoModeBadge /> : <Badge tone="info">{PROVIDER_LABELS[s.room.provider]}</Badge>}
           </h1>
-          <p className="font-mono text-sm text-fg-subtle">{s.room.repository}</p>
+          <p className="font-mono text-sm text-fg-subtle">{feedbackMode ? s.room.productionUrl : s.room.repository}</p>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col gap-2">
@@ -106,7 +107,7 @@ export function OrganizerDashboard({ code, qrSvg, joinUrl }: { code: string; qrS
         </div>
       )}
 
-      <Card className="p-4"><Pipeline status={round?.status ?? null} agent={s.agent} /></Card>
+      <Card className="p-4"><Pipeline status={round?.status ?? null} agent={s.agent} mode={s.room.mode} /></Card>
 
       <div className="grid gap-5 lg:grid-cols-[1.25fr_1fr]">
         <div className="space-y-5">
@@ -115,8 +116,9 @@ export function OrganizerDashboard({ code, qrSvg, joinUrl }: { code: string; qrS
           <FeedbackPanel s={s} act={act} />
         </div>
         <div className="space-y-5">
-          <AgentPanel s={s} act={act} busy={busy} />
-          <SettingsPanel s={s} act={act} />
+          {!feedbackMode && <AgentPanel s={s} act={act} busy={busy} />}
+          <ReportPanel code={code} feedbackMode={feedbackMode} />
+          {!feedbackMode && <SettingsPanel s={s} act={act} />}
           <QueuesPanel s={s} act={act} />
           <Card className="p-4">
             <h2 className="mb-2 font-semibold">Audit log</h2>
@@ -204,7 +206,12 @@ function RoundPanel({ s, now, act, busy }: { s: AdminState; now: number; act: Ac
         {round?.status === "selected" && (
           <>
             <Button variant="secondary" onClick={() => act({ type: "reopen_voting", durationSeconds: 60 })} disabled={busy !== null}>Reopen voting (1 min)</Button>
-            {winner && (
+            {winner && s.room.mode === "feedback" && (
+              <Button onClick={() => act({ type: "publish_results" })} disabled={busy !== null} data-testid="publish-results">
+                <Trophy className="h-4 w-4" /> Publish results
+              </Button>
+            )}
+            {winner && s.room.mode === "build" && (
               <Button onClick={() => act({ type: "approve_development" }, "approve_development")} disabled={busy !== null} data-testid="approve-development">
                 <Bot className="h-4 w-4" /> Approve &ldquo;{winner.title}&rdquo; for {PROVIDER_LABELS[s.room.provider]}
               </Button>
@@ -220,6 +227,26 @@ function RoundPanel({ s, now, act, busy }: { s: AdminState; now: number; act: Ac
         {round && ["developing", "verifying", "review_ready"].includes(round.status) && (
           <Button variant="danger" onClick={() => act({ type: "fail_round" })} disabled={busy !== null}>Mark failed</Button>
         )}
+      </div>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------- report
+
+function ReportPanel({ code, feedbackMode }: { code: string; feedbackMode: boolean }) {
+  const base = `/api/admin/rooms/${code}/report`;
+  return (
+    <Card className="space-y-2 p-4" data-testid="report-panel">
+      <h2 className="font-semibold">Results report</h2>
+      <p className="text-sm text-fg-muted">
+        {feedbackMode
+          ? "Ranked proposals with votes, supporters and quotes. Send it to the site's team."
+          : "Ranked proposals with votes, supporters and quotes from the latest vote."}
+      </p>
+      <div className="flex gap-2">
+        <a href={`${base}?format=md`} download><Button size="sm" variant="secondary">Download Markdown</Button></a>
+        <a href={`${base}?format=csv`} download><Button size="sm" variant="ghost">CSV</Button></a>
       </div>
     </Card>
   );

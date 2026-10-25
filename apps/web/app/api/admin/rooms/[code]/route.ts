@@ -36,6 +36,7 @@ export const GET = route<RoomCtx>(async (_req, ctx) => {
       code: room.code,
       projectName: room.project_name,
       repository: room.github_repository,
+      mode: room.mode,
       productionUrl: room.production_url,
       provider: room.agent_provider,
       maxAcuPerSession: room.max_acu_per_session,

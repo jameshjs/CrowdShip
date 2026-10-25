@@ -1,5 +1,5 @@
 import type {
-  AgentProviderName, AgentState, CheckStatus, Complexity, FeedbackType, ProposalStatus, RoundStatus,
+  AgentProviderName, AgentState, RoomMode, CheckStatus, Complexity, FeedbackType, ProposalStatus, RoundStatus,
 } from "./domain";
 
 // Shapes sent to browsers. These contain no secrets, no guest session ids,
@@ -69,9 +69,11 @@ export interface PublicRoomState {
     status: "active" | "closed";
     projectName: string;
     description: string;
-    repository: string;
+    repository: string | null;
     productionUrl: string | null;
     provider: AgentProviderName;
+    /** "feedback": any website, no agent; the round ends with published results. */
+    mode: RoomMode;
     demoMode: boolean;
   };
   stats: { participants: number; feedback: number; proposals: number };

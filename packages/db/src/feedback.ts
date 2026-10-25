@@ -43,7 +43,9 @@ export async function submitFeedback(
   const text = sanitizeText(input.text, 1000);
   const verdict = moderate(`${text} ${participant.nickname}`);
   const moderation = verdict.ok ? "visible" : "held";
-  const elementLabel = input.elementLabel ? sanitizeText(input.elementLabel, 200) : null;
+  // Feedback-only rooms have no widget: a free-text location stands in for the selected element.
+  const rawLabel = input.elementLabel ?? (input.location ? `On the site: ${input.location}` : undefined);
+  const elementLabel = rawLabel ? sanitizeText(rawLabel, 200) : null;
 
   return db().begin(async (sql) => {
     const [row] = await sql<FeedbackRow[]>`

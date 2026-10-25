@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/client/api";
 import { Logo, SailMark } from "@/components/brand";
+import { cn } from "@/lib/utils";
 
 export function LoginForm() {
   const router = useRouter();
@@ -39,11 +40,12 @@ export function LoginForm() {
   );
 }
 
-type Room = { code: string; project_name: string; status: string; agent_provider: AgentProviderName; created_at: string };
+type Room = { code: string; project_name: string; status: string; agent_provider: AgentProviderName; mode: "build" | "feedback"; created_at: string };
 
 export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo: string; productionUrl: string; provider: AgentProviderName } }) {
   const router = useRouter();
   const [form, setForm] = useState({
+    mode: "build" as "build" | "feedback",
     projectName: "Event Task Board",
     description: "A tiny collaborative task board. Tell us what it should do next.",
     githubRepository: defaults.repo,
@@ -64,6 +66,25 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
 
       <Card className="p-5">
         <h2 className="mb-4 font-semibold">Create a session</h2>
+        <div className="mb-4 grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Session type">
+          {([
+            ["build", "Build with an AI agent", "Your repo. The winning idea becomes a draft PR, verified by CI."],
+            ["feedback", "Feedback & vote only", "Any website, even one you don't own. Ends with published results."],
+          ] as const).map(([value, title, sub]) => (
+            <button
+              key={value}
+              type="button"
+              role="radio"
+              aria-checked={form.mode === value}
+              data-testid={`mode-${value}`}
+              onClick={() => setForm({ ...form, mode: value, ...(value === "feedback" ? { projectName: "", description: "Tell us what would make this site better.", productionUrl: "" } : {}) })}
+              className={cn("rounded-xl border p-3 text-left text-sm transition-colors", form.mode === value ? "border-accent/70 bg-accent-soft" : "border-line hover:border-line-strong")}
+            >
+              <span className="block font-semibold">{title}</span>
+              <span className="text-fg-muted">{sub}</span>
+            </button>
+          ))}
+        </div>
         <form
           className="grid gap-3 sm:grid-cols-2"
           onSubmit={async (e) => {
@@ -82,15 +103,18 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
           <label className="space-y-1 text-sm">Project name
             <Input value={form.projectName} onChange={(e) => setForm({ ...form, projectName: e.target.value })} data-testid="create-name" />
           </label>
-          <label className="space-y-1 text-sm">Approved GitHub repository
-            <Input value={form.githubRepository} onChange={(e) => setForm({ ...form, githubRepository: e.target.value })} className="font-mono" />
-          </label>
+          {form.mode === "build" && (
+            <label className="space-y-1 text-sm">Approved GitHub repository
+              <Input value={form.githubRepository} onChange={(e) => setForm({ ...form, githubRepository: e.target.value })} className="font-mono" />
+            </label>
+          )}
           <label className="space-y-1 text-sm sm:col-span-2">Description
             <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
           </label>
-          <label className="space-y-1 text-sm">App URL (version A)
-            <Input value={form.productionUrl} placeholder="https://…" onChange={(e) => setForm({ ...form, productionUrl: e.target.value })} />
+          <label className={cn("space-y-1 text-sm", form.mode === "feedback" && "sm:col-span-2")}>{form.mode === "feedback" ? "Website to review" : "App URL (version A)"}
+            <Input value={form.productionUrl} placeholder="https://…" onChange={(e) => setForm({ ...form, productionUrl: e.target.value })} data-testid="create-url" />
           </label>
+          {form.mode === "build" && <>
           <label className="space-y-1 text-sm">Coding agent
             <select
               className="h-12 w-full rounded-xl border border-line bg-bg-sunken px-3"
@@ -108,6 +132,7 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
             <input type="checkbox" checked={form.loadDemoSeed} onChange={(e) => setForm({ ...form, loadDemoSeed: e.target.checked })} />
             Load the 5 demo proposals
           </label>
+          </>}
           {error && <p className="text-sm text-danger sm:col-span-2">{error}</p>}
           <Button type="submit" disabled={busy} className="sm:col-span-2" data-testid="create-room">Create session</Button>
         </form>
@@ -120,7 +145,9 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
             <li key={r.code}>
               <Link href={`/admin/${r.code}`} className="flex items-center justify-between rounded-xl border border-line bg-bg-raised px-4 py-3 backdrop-blur-md hover:border-line-strong">
                 <span><span className="mr-3 font-mono text-accent">{r.code}</span>{r.project_name}</span>
-                <Badge tone={r.agent_provider === "mock" ? "demo" : "info"}>{PROVIDER_LABELS[r.agent_provider]}</Badge>
+                {r.mode === "feedback"
+                  ? <Badge tone="success">Feedback only</Badge>
+                  : <Badge tone={r.agent_provider === "mock" ? "demo" : "info"}>{PROVIDER_LABELS[r.agent_provider]}</Badge>}
               </Link>
             </li>
           ))}

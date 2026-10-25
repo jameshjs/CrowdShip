@@ -20,14 +20,16 @@ export default function HomePage() {
   const { round, agent } = state;
   const winner = state.proposals.find((p) => p.id === round?.winningProposalId);
   const released = Boolean(agent?.previewReleased && agent.previewUrl);
-  const status = statusCopy(state, winner?.title ?? null);
+  const feedbackMode = state.room.mode === "feedback";
+  const status = feedbackMode ? feedbackStatusCopy(state, winner?.title ?? null) : statusCopy(state, winner?.title ?? null);
+  const lastResult = feedbackMode ? state.history.find((h) => h.status === "completed") : undefined;
 
   return (
     <div className="space-y-4">
       <p className="text-sm text-fg-muted">Hi {state.me?.nickname} 👋</p>
 
       <Card className="space-y-4 p-5" data-testid="status-card">
-        <Journey status={round?.status ?? null} previewReleased={released} />
+        <Journey status={round?.status ?? null} previewReleased={released} mode={state.room.mode} />
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-balance">{status.title}</h1>
           <p className="mt-1 text-fg-muted text-balance">
@@ -47,11 +49,21 @@ export default function HomePage() {
           </Link>
         )}
         {state.room.productionUrl && !released && (status.cta === "feedback" || status.cta === "none") && (
-          <TryAppButton code={code} url={state.room.productionUrl} variant="secondary" size="lg" className="w-full">
-            Try the app
+          <TryAppButton code={code} url={state.room.productionUrl} external={feedbackMode} variant="secondary" size="lg" className="w-full">
+            {feedbackMode ? "Open the website" : "Try the app"}
           </TryAppButton>
         )}
       </Card>
+
+      {lastResult && round?.status !== "selected" && (
+        <Card className="flex items-center gap-3 p-4" data-testid="last-result">
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-success-soft text-xl" aria-hidden>🏆</span>
+          <p className="text-sm">
+            <span className="block text-xs uppercase tracking-wide text-fg-subtle">Round {lastResult.roundNumber} result</span>
+            <span className="font-semibold">&ldquo;{lastResult.title}&rdquo;</span> was the crowd&apos;s top pick. Results went to the site&apos;s team.
+          </p>
+        </Card>
+      )}
 
       {released && agent?.previewUrl && winner && (
         <div id="preview-review" className="scroll-mt-24">
@@ -102,6 +114,20 @@ function statusCopy(state: PublicRoomState, winner: string | null): { title: str
       return { title: "This round was stopped", sub: "A new round will start soon. Your ideas still count.", cta: "feedback" };
     default:
       return { title: "Share your ideas", sub: "Try the app, then tell us what to fix or build. Similar ideas get grouped for voting.", cta: "feedback" };
+  }
+}
+
+/** Feedback-only rooms: no build. The round ends with the organizer publishing results. */
+function feedbackStatusCopy(state: PublicRoomState, winner: string | null): { title: string; sub: string; cta: Cta } {
+  switch (state.round?.status) {
+    case "voting":
+      return { title: "Voting is open", sub: "Pick the change the site needs most.", cta: "vote" };
+    case "selected":
+      return { title: winner ? `"${winner}" is the top pick!` : "Voting is closed", sub: "The organizer is publishing the results for the site's team.", cta: "none" };
+    case "cancelled":
+      return { title: "This round was stopped", sub: "A new round will start soon. Your ideas still count.", cta: "feedback" };
+    default:
+      return { title: "What would make this site better?", sub: "Browse the site, then tell us what to fix or add. Similar ideas get grouped for voting.", cta: "feedback" };
   }
 }
 
