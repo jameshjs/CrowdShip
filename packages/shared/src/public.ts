@@ -20,6 +20,8 @@ export interface PublicProposal {
   approval: { likes: number; dislikes: number };
   /** Where on the page the idea applies, from the feedback behind it (widget element, circle, or "where on the site?"). */
   location: { pageUrl: string | null; label: string | null; region: FeedbackRegion | null } | null;
+  /** Up to two short quotes from the visible feedback behind this idea. */
+  quotes: { nickname: string; text: string }[];
 }
 
 export interface PublicRound {

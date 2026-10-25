@@ -4,6 +4,7 @@ import { act, adminState, createRoom, organizer } from "./helpers";
 test("participant joins through the QR URL and keeps their identity after refresh", async ({ page }) => {
   const org = await organizer();
   const code = await createRoom(org);
+  expect(code).toMatch(/^[1-9]\d{3}$/); // new rooms get 4-digit codes
   const t0 = Date.now();
   await page.goto(`/join/${code}`);
   await page.getByTestId("nickname-input").fill("Ada");

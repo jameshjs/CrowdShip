@@ -9,6 +9,7 @@ import { api, ApiError } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 import { useRoomCtx } from "../room-shell";
 import { SwipeDeck } from "./swipe-deck";
+import { ApprovalMeter } from "@/components/approval-meter";
 
 export default function VotePage() {
   const { state, setState, code, serverNow, refetch } = useRoomCtx();
@@ -117,6 +118,14 @@ export default function VotePage() {
                     </span>
                   </div>
                   {p.description && <p className="text-sm text-fg-muted line-clamp-2">{p.description}</p>}
+                  {p.quotes[0] && (
+                    <p className="border-l-2 border-accent/50 pl-2.5 text-sm text-fg line-clamp-2">
+                      &ldquo;{p.quotes[0].text}&rdquo; <span className="text-xs text-fg-subtle">{p.quotes[0].nickname}</span>
+                    </p>
+                  )}
+                  {p.approval.likes + p.approval.dislikes > 0 && (
+                    <ApprovalMeter likes={p.approval.likes} dislikes={p.approval.dislikes} />
+                  )}
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge><Users className="h-3 w-3" aria-hidden /> {p.supporters} suggested</Badge>
                     <Badge>{p.complexity}</Badge>

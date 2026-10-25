@@ -62,7 +62,7 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
   const tallies = round && roundProposalIds.length ? await voteTallies(round.id) : [];
   const tallyMap = new Map(tallies.map((t) => [t.proposal_id, t.votes]));
   const swipeMap = new Map((round ? await swipeTallies(round.id) : []).map((t) => [t.proposal_id, { likes: t.likes, dislikes: t.dislikes }]));
-  const locations = await proposalLocations(room.id);
+  const [locations, quotes] = await Promise.all([proposalLocations(room.id), proposalQuotes(room.id)]);
 
   const publicProposals: PublicProposal[] = proposals
     .filter((p) => p.status !== "rejected" && p.status !== "suggested")
@@ -78,6 +78,7 @@ export async function getPublicRoomState(code: string): Promise<PublicRoomState>
       votes: tallyMap.get(p.id) ?? 0,
       approval: swipeMap.get(p.id) ?? { likes: 0, dislikes: 0 },
       location: locations.get(p.id) ?? null,
+      quotes: quotes.get(p.id) ?? [],
     }));
 
   let agent: PublicAgentSession | null = null;
@@ -166,4 +167,23 @@ async function proposalLocations(roomId: string): Promise<Map<string, NonNullabl
     where f.region is not null or f.element_label is not null
     order by pf.proposal_id, (f.region is null), f.created_at`;
   return new Map(rows.map((r) => [r.proposal_id, { pageUrl: r.page_url, label: r.element_label, region: r.region }]));
+}
+
+/** Up to two quotes per proposal: earliest visible, non-empty feedback, trimmed for a card. */
+async function proposalQuotes(roomId: string): Promise<Map<string, { nickname: string; text: string }[]>> {
+  const rows = await db()<{ proposal_id: string; nickname: string; text: string }[]>`
+    select proposal_id, nickname, text from (
+      select pf.proposal_id, pa.nickname, f.text,
+        row_number() over (partition by pf.proposal_id order by f.created_at) as n
+      from proposal_feedback pf
+      join feedback f on f.id = pf.feedback_id and f.moderation = 'visible' and length(f.text) >= 3
+      join participants pa on pa.id = f.participant_id
+      join proposals p on p.id = pf.proposal_id and p.room_id = ${roomId}
+    ) q where n <= 2`;
+  const out = new Map<string, { nickname: string; text: string }[]>();
+  for (const r of rows) {
+    const text = r.text.length > 140 ? `${r.text.slice(0, 139)}…` : r.text;
+    out.set(r.proposal_id, [...(out.get(r.proposal_id) ?? []), { nickname: r.nickname, text }]);
+  }
+  return out;
 }

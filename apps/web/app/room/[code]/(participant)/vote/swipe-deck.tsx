@@ -21,6 +21,9 @@ export function SwipeDeck() {
   const chain = useRef<Promise<void>>(Promise.resolve());
   // This device's answers win over server state: a refetch that raced a swipe must not bring a card back.
   const [local, setLocal] = useState<Record<string, boolean>>({});
+  // After each swipe: where the room stands on that idea, including you.
+  const [echo, setEcho] = useState<{ id: number; liked: boolean; pct: number; title: string } | null>(null);
+  const echoSeq = useRef(0);
   if (!state?.round) return null;
   const round = state.round;
   const mine = { ...(state.me?.swipes ?? {}), ...local };
@@ -36,6 +39,14 @@ export function SwipeDeck() {
     setError(null);
     const prev = mine[p.id];
     setLocal((l) => ({ ...l, [p.id]: liked }));
+    {
+      const likes = p.approval.likes + (liked ? 1 : 0) - (prev === true ? 1 : 0);
+      const total = p.approval.likes + p.approval.dislikes + (prev === undefined ? 1 : 0);
+      const agree = liked ? likes : total - likes;
+      const id = ++echoSeq.current;
+      setEcho({ id, liked, pct: Math.round((agree / Math.max(1, total)) * 100), title: p.title });
+      setTimeout(() => setEcho((e) => (e?.id === id ? null : e)), 2200);
+    }
     setState((s) => s && {
       ...s,
       me: s.me && { ...s.me, swipes: { ...s.me.swipes, [p.id]: liked } },
@@ -83,6 +94,22 @@ export function SwipeDeck() {
         <p className="shrink-0 text-sm tabular text-fg-subtle" data-testid="deck-progress">{done}/{approved.length}</p>
       </div>
       {error && <p className="rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">{error}</p>}
+      <AnimatePresence>
+        {echo && (
+          <motion.p
+            key={echo.id}
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className={cn("fixed inset-x-4 top-20 z-30 mx-auto max-w-sm rounded-xl border px-4 py-2 text-sm shadow-lg backdrop-blur-xl",
+              echo.liked ? "border-success/40 bg-[oklch(0.25_0.05_160/0.92)] text-success" : "border-danger/40 bg-[oklch(0.25_0.06_20/0.92)] text-danger")}
+            role="status"
+            data-testid="swipe-echo"
+          >
+            {echo.liked ? "👍" : "👎"} You and <span className="font-semibold tabular">{echo.pct}%</span> of the room said {echo.liked ? "yes" : "no"} to &ldquo;{echo.title}&rdquo;
+          </motion.p>
+        )}
+      </AnimatePresence>
 
       {deck.length > 0 ? (
         <>
@@ -160,7 +187,17 @@ function SwipeCard({ proposal: p, top, appUrl, onSwipe }: { proposal: PublicProp
       <LocationPreview location={p.location} appUrl={appUrl} live={top} height={140} />
       <div className="min-h-0 flex-1">
         <h2 className="text-2xl font-bold leading-tight tracking-tight text-balance">{p.title}</h2>
-        {p.description && <p className="mt-2 line-clamp-4 text-fg-muted">{p.description}</p>}
+        {p.description && <p className={cn("mt-2 text-fg-muted", p.quotes.length ? "line-clamp-2" : "line-clamp-4")}>{p.description}</p>}
+        {p.quotes.length > 0 && (
+          <ul className="mt-3 space-y-1.5" data-testid="card-quotes">
+            {p.quotes.map((q, i) => (
+              <li key={i} className="border-l-2 border-accent/50 pl-2.5 text-sm">
+                <span className="line-clamp-2 text-fg">&ldquo;{q.text}&rdquo;</span>
+                <span className="text-xs text-fg-subtle">{q.nickname}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Badge><Users className="h-3 w-3" aria-hidden /> {p.supporters} suggested</Badge>

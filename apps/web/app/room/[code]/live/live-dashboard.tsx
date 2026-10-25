@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Bot, ExternalLink, Trophy, GitPullRequest, Eye, MessageSquare, Lightbulb, Users, Vote, Wifi, WifiOff, Star } from "lucide-react";
 import { approvalScore, creditLine, PROVIDER_LABELS, type PublicRoomState } from "@crowdship/shared";
@@ -9,10 +10,17 @@ import { agentStateLabel, CheckIcon, Countdown, DemoModeBadge, Pipeline, roundSt
 import { Badge } from "@/components/ui/badge";
 import { SailMark } from "@/components/brand";
 import { ShippedBanner } from "./shipped-banner";
+import { SwipeArena } from "./swipe-arena";
+import { QrButton } from "@/components/big-qr";
 import { cn } from "@/lib/utils";
 
 export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: string; joinUrl: string }) {
   const { state, online, status, serverNow } = useRoom(code);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "t" || e.key === "T") window.location.assign(`/room/${code}/tree`); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [code]);
   const now = useNow(1000, serverNow);
   if (!state) return <div className="grid min-h-dvh place-items-center text-fg-muted">Connecting…</div>;
   const { round, agent } = state;
@@ -43,14 +51,16 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
           </div>
           <div className="flex items-center gap-5">
             <div className="text-right">
-              <p className="text-sm text-fg-muted">Scan to join, or go to</p>
-              <p className="font-mono text-lg">{joinUrl.replace(/^https?:\/\//, "")}</p>
+              <p className="text-sm text-fg-muted">Scan to join, or enter code</p>
+              <p className="font-mono text-4xl font-bold tracking-[0.15em]" data-testid="live-room-code">{code}</p>
+              <p className="font-mono text-sm text-fg-muted">{joinUrl.replace(/^https?:\/\//, "").replace(/\/join\/.*$/, "")}</p>
               <p className="mt-1 flex items-center justify-end gap-1.5 text-xs text-fg-subtle">
                 {status === "live" ? <Wifi className="h-3.5 w-3.5 text-success" /> : <WifiOff className="h-3.5 w-3.5 text-warn" />}
                 {status === "live" ? "Live" : "Reconnecting…"}
               </p>
             </div>
-            <div className="h-28 w-28 overflow-hidden rounded-xl bg-white p-1" dangerouslySetInnerHTML={{ __html: qrSvg }} aria-label={`QR code for ${joinUrl}`} />
+            <a href={`/room/${code}/tree`} className="rounded-xl border border-line px-3 py-2 text-sm text-fg-muted hover:text-fg" data-testid="open-tree">Idea tree (T)</a>
+            <QrButton qrSvg={qrSvg} joinUrl={joinUrl} code={code} className="h-32 w-32" hotkey />
           </div>
         </header>
 
@@ -80,8 +90,10 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
         <section className="grid min-h-0 flex-1 gap-5 lg:grid-cols-[1.1fr_1fr_0.9fr]">
           {/* proposals */}
           <div className="glass flex flex-col rounded-2xl border border-line p-5">
-            <h2 className="mb-4 text-sm uppercase tracking-[0.15em] text-fg-subtle">{winner ? "Winner" : swipePhase ? "Crowd approval" : "Leading proposals"}</h2>
-            {winner ? (
+            <h2 className="mb-4 text-sm uppercase tracking-[0.15em] text-fg-subtle">{winner ? "Winner" : swipePhase ? "Yes or no? Crowd approval" : "Leading proposals"}</h2>
+            {!winner && swipePhase ? (
+              <SwipeArena proposals={state.proposals.filter((p) => p.status === "approved")} />
+            ) : winner ? (
               <div className="space-y-3">
                 <p className="text-4xl font-semibold leading-tight text-balance">{winner.title}</p>
                 <p className="text-lg text-fg-muted">{winner.description}</p>

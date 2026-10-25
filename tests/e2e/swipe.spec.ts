@@ -79,6 +79,7 @@ test("swipe deck: swipe ideas, see where they apply, organizer gets the top 3 pr
   const live = await browser.newPage();
   await live.goto(`/room/${code}/live`);
   await expect(live.getByText("Crowd approval")).toBeVisible();
+  await expect(live.getByTestId("swipe-arena").getByTestId("approval-meter").first()).toBeVisible();
 
   // Once the final vote starts, swiping is closed and the Vote tab shows the ballot.
   await console_.getByTestId("start-voting").click();

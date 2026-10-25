@@ -13,6 +13,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { agentStateLabel, CheckIcon, Countdown, DemoModeBadge, Pipeline, roundStatusLabel, useNow } from "@/components/status";
 import { useRoom } from "@/lib/client/use-room";
 import { api } from "@/lib/client/api";
+import { QrButton } from "@/components/big-qr";
 import { cn, timeAgo } from "@/lib/utils";
 
 type Proposal = {
@@ -97,7 +98,7 @@ export function OrganizerDashboard({ code, qrSvg, joinUrl }: { code: string; qrS
             <a href={`/room/${code}/live`} target="_blank" rel="noreferrer"><Button variant="secondary" size="sm">Open live dashboard <ExternalLink className="h-3.5 w-3.5" /></Button></a>
             <a href={joinUrl} target="_blank" rel="noreferrer"><Button variant="ghost" size="sm">Participant view <ExternalLink className="h-3.5 w-3.5" /></Button></a>
           </div>
-          <div className="h-24 w-24 rounded-lg bg-white p-1" dangerouslySetInnerHTML={{ __html: qrSvg }} aria-label="Join QR code" />
+          <QrButton qrSvg={qrSvg} joinUrl={joinUrl} code={code} className="h-24 w-24" />
         </div>
       </header>
 

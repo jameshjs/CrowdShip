@@ -24,11 +24,9 @@ export interface RoomRow {
   organizer_id: string;
 }
 
-const CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-export function generateRoomCode(length = 5): string {
-  let code = "";
-  for (let i = 0; i < length; i++) code += CODE_ALPHABET[randomInt(CODE_ALPHABET.length)];
-  return code;
+/** Four digits (1000–9999): easy to say out loud and type on a phone keypad. Older rooms keep their letter codes. */
+export function generateRoomCode(): string {
+  return String(randomInt(1000, 10000));
 }
 
 export async function getRoomByCode(code: string, sql: Sql = db()): Promise<RoomRow> {
@@ -68,7 +66,7 @@ export async function createRoom(input: {
       values (${input.projectName}, ${input.description}, ${input.githubRepository ?? null}, ${input.productionUrl ?? null}, ${input.organizerId})
       returning id`;
     let roomId: string | undefined;
-    for (let attempt = 0; attempt < 5 && !roomId; attempt++) {
+    for (let attempt = 0; attempt < 25 && !roomId; attempt++) {
       const rows = await sql<{ id: string }[]>`
         insert into rooms (project_id, code, agent_provider, mode, max_acu_per_session)
         values (${project!.id}, ${generateRoomCode()}, ${input.agentProvider}, ${input.mode ?? "build"}, ${input.maxAcuPerSession})

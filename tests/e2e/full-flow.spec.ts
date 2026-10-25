@@ -38,6 +38,20 @@ test("complete flow in labeled demo mode: feedback → vote → agent → PR →
   await expect.poll(async () => (await adminState(org, code)).round.status, { timeout: 60_000 }).toBe("review_ready");
   await expect(live.getByText("(simulated checks)")).toBeVisible();
 
+  // Idea tree: the winner has travelled purple → blue → green.
+  const tree = await browser.newPage();
+  await tree.goto(`/room/${code}/tree`);
+  await expect(tree.getByTestId("tree-legend")).toContainText("User suggestions");
+  await expect(tree.getByTestId("tree-row-ready")).toHaveCount(1);
+  await expect(tree.getByTestId("tree-row-idea").first()).toBeVisible();
+  await tree.close();
+
+  // Big QR for the room.
+  await live.getByTestId("qr-button").click();
+  await expect(live.getByTestId("qr-fullscreen")).toContainText(code);
+  await live.keyboard.press("Escape");
+  await expect(live.getByTestId("qr-fullscreen")).toBeHidden();
+
   await act(org, code, { type: "set_preview_url", agentSessionId: approved.agentSessionId, previewUrl: "https://example.com/preview" });
   await act(org, code, { type: "release_preview", agentSessionId: approved.agentSessionId });
   // The climax: every phone gets the "it's live" moment, the projector shows the shipped banner.

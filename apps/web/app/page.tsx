@@ -25,7 +25,7 @@ export default function Home() {
             Suggest. Vote. Watch AI turn ideas into real features. A human approves every step.
           </p>
           <form action="/join" className="mt-9 flex max-w-md gap-2">
-            <Input name="code" placeholder="Room code" aria-label="Room code" className="h-14 font-mono uppercase" maxLength={8} autoCapitalize="characters" required />
+            <Input name="code" placeholder="Room code, e.g. 4821" aria-label="Room code" className="h-14 font-mono uppercase" maxLength={8} autoCapitalize="characters" required />
             <button className={cn(buttonVariants({ size: "lg" }))} type="submit">Join <ArrowRight className="h-4 w-4" /></button>
           </form>
           <Link href="/admin" className="mt-5 inline-block text-sm text-fg-subtle hover:text-fg">Organizer? Sign in →</Link>
