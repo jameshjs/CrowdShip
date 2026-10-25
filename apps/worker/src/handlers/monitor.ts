@@ -28,12 +28,14 @@ export async function handleMonitor(job: Job<{ agentSessionId: string }>, deps: 
   const provider = deps.provider(s.provider, room.github_repository);
   const sess = await provider.getSession(s.provider_session_id);
 
-  if (sess.detail && sess.detail !== s.status_detail) {
-    await updateAgentSession(s.id, { status_detail: sess.detail, provider_url: sess.url ?? s.provider_url });
+  // One display string per poll; blocked sessions say so explicitly (no flip-flopping between wordings).
+  const detail = sess.status === "blocked" ? `Waiting for input on ${s.provider} (${sess.detail})` : sess.detail;
+  if (detail && detail !== s.status_detail) {
+    await updateAgentSession(s.id, { status_detail: detail, provider_url: sess.url ?? s.provider_url });
     // Mock steps and coarse status changes go to the public feed; ACU ticks only refresh state.
     const coarse = (x: string | null) => (x ?? "").split(" · ")[0];
-    if (coarse(sess.detail) !== coarse(s.status_detail)) {
-      await activity(db(), room, "agent_progress", { provider: s.provider, detail: coarse(sess.detail), demoMode: sess.simulated });
+    if (coarse(detail) !== coarse(s.status_detail)) {
+      await activity(db(), room, "agent_progress", { provider: s.provider, detail: coarse(detail), demoMode: sess.simulated });
     } else {
       await stateChanged(db(), room.code, "agent");
     }
@@ -95,9 +97,6 @@ export async function handleMonitor(job: Job<{ agentSessionId: string }>, deps: 
       await failAgentSession(room, s.id, "Agent finished without opening a pull request in the approved repository");
       return "done";
     }
-  }
-  if (sess.status === "blocked" && fresh.state !== "pr_opened") {
-    await updateAgentSession(s.id, { status_detail: `Waiting for input on ${s.provider} (${sess.detail})` });
   }
   if (s.launched_at && Date.now() - s.launched_at.getTime() > MAX_SESSION_MS && !fresh.pr_number) {
     await failAgentSession(room, s.id, "Agent session timed out without a pull request");
