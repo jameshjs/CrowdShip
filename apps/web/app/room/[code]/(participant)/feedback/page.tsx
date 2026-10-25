@@ -12,10 +12,10 @@ import { cn } from "@/lib/utils";
 import { useRoomCtx } from "../room-shell";
 
 const QUICK: { type: FeedbackType; label: string; hint: string; icon: React.ElementType; tone: string; textRequired: boolean }[] = [
-  { type: "bug", label: "Something is broken", hint: "What happened? What did you expect?", icon: Bug, tone: "text-warn bg-warn-soft", textRequired: true },
-  { type: "confusing", label: "This is confusing", hint: "What was confusing?", icon: HelpCircle, tone: "text-info bg-info-soft", textRequired: true },
-  { type: "feature", label: "I have an idea", hint: "Describe your idea. What should the app do?", icon: Lightbulb, tone: "text-accent bg-accent-soft", textRequired: true },
-  { type: "praise", label: "I like this", hint: "What do you like? (optional)", icon: Heart, tone: "text-demo bg-demo-soft", textRequired: false },
+  { type: "bug", label: "Something is broken", hint: "What happened? What did you expect?", icon: Bug, tone: "from-[#f0707f] to-[#b8467c]", textRequired: true },
+  { type: "confusing", label: "This is confusing", hint: "What was confusing?", icon: HelpCircle, tone: "from-[#6fb2f7] to-[#5b6ee8]", textRequired: true },
+  { type: "feature", label: "I have an idea", hint: "Describe your idea. What should the app do?", icon: Lightbulb, tone: "from-[#f7c95c] to-[#e08a3c]", textRequired: true },
+  { type: "praise", label: "I like this", hint: "What do you like? (optional)", icon: Heart, tone: "from-[#e88be0] to-[#9a6cf0]", textRequired: false },
 ];
 
 export default function FeedbackPage() {
@@ -64,7 +64,7 @@ export default function FeedbackPage() {
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="flex items-center gap-2 rounded-xl bg-accent-soft px-4 py-3 text-sm text-accent"
+            className="flex items-center gap-2 rounded-xl bg-success-soft px-4 py-3 text-sm text-success"
             role="status"
             data-testid="feedback-sent"
           >
@@ -88,11 +88,11 @@ export default function FeedbackPage() {
               }}
               aria-pressed={active}
               className={cn(
-                "flex min-h-28 flex-col items-start justify-between rounded-2xl border p-4 text-left transition-colors",
-                active ? "border-accent bg-bg-raised" : "border-line bg-bg-raised hover:border-line-strong",
+                "flex min-h-28 flex-col items-start justify-between rounded-2xl border p-4 text-left backdrop-blur-md transition-colors",
+                active ? "border-accent/70 bg-accent-soft glow-brand" : "border-line bg-bg-raised hover:border-line-strong",
               )}
             >
-              <span className={cn("grid h-10 w-10 place-items-center rounded-xl", q.tone)}><Icon className="h-5 w-5" aria-hidden /></span>
+              <span className={cn("grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br text-white shadow-lg", q.tone)}><Icon className="h-5 w-5" aria-hidden /></span>
               <span className="text-[15px] font-medium leading-tight">{q.label}</span>
             </button>
           );
@@ -107,7 +107,7 @@ export default function FeedbackPage() {
             exit={{ opacity: 0, height: 0 }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 rounded-2xl border border-line bg-bg-raised p-4">
+            <div className="space-y-3 rounded-2xl border border-line bg-bg-raised p-4 backdrop-blur-md">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-medium">{selected.label}</p>
                 <button onClick={() => setSelected(null)} className="text-fg-subtle" aria-label="Cancel"><X className="h-4 w-4" /></button>

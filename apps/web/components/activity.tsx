@@ -9,7 +9,7 @@ const s = (v: unknown) => (typeof v === "string" ? v : "");
 const n = (v: unknown) => (typeof v === "number" ? v : 0);
 
 /** Turn a public activity event into plain-text copy. Never renders HTML. */
-export function describeActivity(a: PublicActivity): { icon: React.ElementType; text: string; tone: "accent" | "info" | "warn" | "danger" | "neutral" | "demo" } {
+export function describeActivity(a: PublicActivity): { icon: React.ElementType; text: string; tone: "accent" | "success" | "info" | "warn" | "danger" | "neutral" | "demo" } {
   const p = a.payload;
   const provider = PROVIDER_LABELS[(s(p.provider) || "mock") as AgentProviderName] ?? "Agent";
   switch (a.type) {
@@ -63,7 +63,7 @@ export function describeActivity(a: PublicActivity): { icon: React.ElementType; 
     case "pr_updated":
       return { icon: GitPullRequest, text: `PR #${n(p.prNumber)} updated to ${s(p.sha)}, re-verifying`, tone: "info" };
     case "verification_passed":
-      return { icon: ShieldCheck, text: `All required checks passed on ${s(p.sha)}${p.simulated ? " (simulated)" : ""}`, tone: p.simulated ? "demo" : "accent" };
+      return { icon: ShieldCheck, text: `All required checks passed on ${s(p.sha)}${p.simulated ? " (simulated)" : ""}`, tone: p.simulated ? "demo" : "success" };
     case "verification_failed":
       return { icon: XCircle, text: `Checks failed on ${s(p.sha)}, so it's not verified`, tone: "danger" };
     case "preview_released":
@@ -83,6 +83,7 @@ export function describeActivity(a: PublicActivity): { icon: React.ElementType; 
 
 const toneClass = {
   accent: "text-accent bg-accent-soft",
+  success: "text-success bg-success-soft",
   info: "text-info bg-info-soft",
   warn: "text-warn bg-warn-soft",
   danger: "text-danger bg-danger-soft",

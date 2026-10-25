@@ -61,7 +61,7 @@ export const agentStateLabel: Record<AgentState, string> = {
 };
 
 export function CheckIcon({ status, className }: { status: CheckStatus; className?: string }) {
-  if (status === "pass") return <Check className={cn("h-4 w-4 text-accent", className)} aria-label="passed" />;
+  if (status === "pass") return <Check className={cn("h-4 w-4 text-success", className)} aria-label="passed" />;
   if (status === "fail") return <X className={cn("h-4 w-4 text-danger", className)} aria-label="failed" />;
   if (status === "pending") return <Loader2 className={cn("h-4 w-4 animate-spin text-warn", className)} aria-label="pending" />;
   return <Minus className={cn("h-4 w-4 text-fg-subtle", className)} aria-label="unavailable" />;

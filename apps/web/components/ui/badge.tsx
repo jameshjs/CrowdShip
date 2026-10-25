@@ -6,6 +6,7 @@ const badgeVariants = cva("inline-flex items-center gap-1.5 rounded-full px-2.5 
     tone: {
       neutral: "bg-bg-sunken text-fg-muted border border-line",
       accent: "bg-accent-soft text-accent",
+      success: "bg-success-soft text-success",
       info: "bg-info-soft text-info",
       warn: "bg-warn-soft text-warn",
       danger: "bg-danger-soft text-danger",

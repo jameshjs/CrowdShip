@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquarePlus, Users, Vote, Trophy, GitPullRequest } from "lucide-react";
+import { ChevronRight, MessageSquarePlus, Users, Vote, Trophy, GitPullRequest } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { agentStateLabel, CheckIcon, Countdown, Pipeline, roundStatusLabel, useNow } from "@/components/status";
 import { TryAppButton } from "@/components/try-app";
@@ -24,6 +23,7 @@ export default function ExplorePage() {
     <div className="space-y-4">
       <section>
         <p className="text-sm text-fg-muted">Hi {state.me?.nickname} 👋</p>
+        <h1 className="mt-1 text-2xl font-bold tracking-tight">Your ideas <span className="text-brand-gradient">build what&apos;s next.</span></h1>
         {state.room.description && <p className="mt-1 text-fg-muted">{state.room.description}</p>}
       </section>
 
@@ -49,12 +49,8 @@ export default function ExplorePage() {
             Try the app
           </TryAppButton>
         )}
-        <Link href={`/room/${code}/feedback`} className={cn(buttonVariants({ size: "lg" }), "w-full justify-between")}>
-          Give feedback <MessageSquarePlus className="h-4 w-4" />
-        </Link>
-        <Link href={`/room/${code}/vote`} className={cn(buttonVariants({ size: "lg", variant: "secondary" }), "w-full justify-between")}>
-          Vote on ideas <Vote className="h-4 w-4" />
-        </Link>
+        <ActionRow href={`/room/${code}/feedback`} icon={MessageSquarePlus} title="Give feedback" sub="Help shape what we build next" tone="from-[#7a7cf0] to-[#5b8df5]" featured />
+        <ActionRow href={`/room/${code}/vote`} icon={Vote} title="Vote on ideas" sub={round?.status === "voting" ? "Voting is open now" : "Pick what gets built"} tone="from-[#d17ee8] to-[#8e6cf0]" />
       </div>
 
       {(winner || leader) && (
@@ -96,5 +92,26 @@ export default function ExplorePage() {
         <PreviewReview code={code} proposalId={winner.id} previewUrl={agent.previewUrl} productionUrl={state.room.productionUrl} current={state.me?.previewRating ?? null} />
       )}
     </div>
+  );
+}
+
+function ActionRow({ href, icon: Icon, title, sub, tone, featured }: { href: string; icon: React.ElementType; title: string; sub: string; tone: string; featured?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={cn(
+        "group flex items-center gap-3 rounded-2xl border p-3 backdrop-blur-md transition-colors active:scale-[0.99]",
+        featured ? "border-accent/40 bg-accent-soft glow-brand" : "border-line bg-bg-raised hover:border-line-strong",
+      )}
+    >
+      <span className={cn("grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-br text-white shadow-lg", tone)}>
+        <Icon className="h-5 w-5" aria-hidden />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-semibold">{title}</span>
+        <span className="block truncate text-sm text-fg-muted">{sub}</span>
+      </span>
+      <ChevronRight className="h-5 w-5 text-fg-subtle transition-transform group-hover:translate-x-0.5" aria-hidden />
+    </Link>
   );
 }

@@ -7,6 +7,7 @@ import { useRoom } from "@/lib/client/use-room";
 import { ActivityRow } from "@/components/activity";
 import { agentStateLabel, CheckIcon, Countdown, DemoModeBadge, Pipeline, roundStatusLabel, useNow } from "@/components/status";
 import { Badge } from "@/components/ui/badge";
+import { SailMark } from "@/components/brand";
 import { cn } from "@/lib/utils";
 
 export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: string; joinUrl: string }) {
@@ -29,10 +30,10 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
         {/* header */}
         <header className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-accent text-xl font-bold text-accent-fg">C</span>
+            <SailMark className="h-14 w-14" />
             <div>
-              <p className="text-sm uppercase tracking-[0.2em] text-fg-subtle">CrowdShip live</p>
-              <h1 className="text-3xl font-semibold tracking-tight">{state.room.projectName}</h1>
+              <p className="text-sm uppercase tracking-[0.2em] text-fg-subtle"><span className="text-brand-gradient font-semibold">CrowdShip</span> live</p>
+              <h1 className="text-3xl font-bold tracking-tight">{state.room.projectName}</h1>
             </div>
             {state.room.demoMode && <DemoModeBadge className="ml-2 text-sm" />}
           </div>
@@ -41,7 +42,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
               <p className="text-sm text-fg-muted">Scan to join, or go to</p>
               <p className="font-mono text-lg">{joinUrl.replace(/^https?:\/\//, "")}</p>
               <p className="mt-1 flex items-center justify-end gap-1.5 text-xs text-fg-subtle">
-                {status === "live" ? <Wifi className="h-3.5 w-3.5 text-accent" /> : <WifiOff className="h-3.5 w-3.5 text-warn" />}
+                {status === "live" ? <Wifi className="h-3.5 w-3.5 text-success" /> : <WifiOff className="h-3.5 w-3.5 text-warn" />}
                 {status === "live" ? "Live" : "Reconnecting…"}
               </p>
             </div>
@@ -93,7 +94,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
                         <span className="text-2xl font-semibold tabular">{p.votes}</span>
                       </div>
                       <div className="h-2.5 overflow-hidden rounded-full bg-bg-sunken">
-                        <motion.div className="h-full rounded-full bg-accent" initial={false} animate={{ width: `${(p.votes / maxVotes) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
+                        <motion.div className="h-full rounded-full bg-brand-gradient" initial={false} animate={{ width: `${(p.votes / maxVotes) * 100}%` }} transition={{ type: "spring", stiffness: 120, damping: 20 }} />
                       </div>
                     </motion.li>
                   ))}
@@ -140,7 +141,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
                     <ul className="grid grid-cols-3 gap-2">
                       {agent.verification.checks.length ? agent.verification.checks.map((c) => (
                         <li key={c.name} className={cn("flex items-center gap-2 rounded-xl border p-3 font-mono text-sm",
-                          c.status === "pass" ? "border-accent/40" : c.status === "fail" ? "border-danger/40" : "border-line")}>
+                          c.status === "pass" ? "border-success/40" : c.status === "fail" ? "border-danger/40" : "border-line")}>
                           <CheckIcon status={c.status} /> {c.name}
                         </li>
                       )) : <li className="col-span-3 text-fg-subtle">Waiting for checks to start…</li>}
@@ -183,7 +184,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
           <footer className="flex flex-wrap items-center gap-3 text-sm text-fg-muted">
             <span className="uppercase tracking-[0.15em] text-fg-subtle">History</span>
             {state.history.map((h) => (
-              <Badge key={h.roundNumber} tone={h.status === "completed" ? "accent" : h.status === "failed" ? "danger" : "neutral"}>
+              <Badge key={h.roundNumber} tone={h.status === "completed" ? "success" : h.status === "failed" ? "danger" : "neutral"}>
                 R{h.roundNumber} · {h.title} · {roundStatusLabel[h.status]}
               </Badge>
             ))}

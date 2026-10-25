@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/client/api";
+import { Logo, SailMark } from "@/components/brand";
 
 export function LoginForm() {
   const router = useRouter();
@@ -16,7 +17,8 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   return (
     <main className="mx-auto max-w-sm px-5 pt-24">
-      <h1 className="text-2xl font-semibold">Organizer sign in</h1>
+      <Logo className="mb-8 text-lg" markClassName="h-9 w-9" />
+      <h1 className="text-2xl font-bold tracking-tight">Organizer sign in</h1>
       <form
         className="mt-6 space-y-3"
         onSubmit={async (e) => {
@@ -56,7 +58,7 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
   return (
     <main className="mx-auto max-w-4xl space-y-8 px-5 py-10">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">CrowdShip organizer</h1>
+        <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight"><SailMark className="h-9 w-9" /> Organizer</h1>
         <Button variant="ghost" size="sm" onClick={async () => { await api("/api/admin/logout", {}); router.refresh(); }}>Sign out</Button>
       </div>
 
@@ -116,7 +118,7 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
         <ul className="space-y-2">
           {rooms.map((r) => (
             <li key={r.code}>
-              <Link href={`/admin/${r.code}`} className="flex items-center justify-between rounded-xl border border-line bg-bg-raised px-4 py-3 hover:border-line-strong">
+              <Link href={`/admin/${r.code}`} className="flex items-center justify-between rounded-xl border border-line bg-bg-raised px-4 py-3 backdrop-blur-md hover:border-line-strong">
                 <span><span className="mr-3 font-mono text-accent">{r.code}</span>{r.project_name}</span>
                 <Badge tone={r.agent_provider === "mock" ? "demo" : "info"}>{PROVIDER_LABELS[r.agent_provider]}</Badge>
               </Link>
