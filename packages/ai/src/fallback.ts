@@ -43,6 +43,46 @@ const TEMPLATES: Record<string, Omit<TriagedProposal, "missingDetails">> = {
     acceptanceCriteria: ["Pressing the shortcut focuses the input"],
     complexity: "small",
   },
+  diet: {
+    title: "Dietary filters",
+    category: "feature",
+    description: "Let people filter the menu by dietary needs.",
+    requirements: ["Vegan and gluten-free filter chips", "Filters combine (vegan + gluten-free)", "Show how many items match"],
+    acceptanceCriteria: ["Selecting Vegan hides items that aren't vegan", "Selecting both shows only items with both tags"],
+    complexity: "small",
+  },
+  search: {
+    title: "Search the menu",
+    category: "feature",
+    description: "Find a drink or bake by typing its name.",
+    requirements: ["A search box above the menu", "Matches names and descriptions as you type"],
+    acceptanceCriteria: ["Typing 'latte' shows only lattes"],
+    complexity: "small",
+  },
+  favorite: {
+    title: "Favourite drinks",
+    category: "feature",
+    description: "Save your usual order and add it in one tap.",
+    requirements: ["Star items as favourites", "Favourites persist after refresh"],
+    acceptanceCriteria: ["A starred item is still starred after reload"],
+    complexity: "small",
+  },
+  notes: {
+    title: "Order notes for the barista",
+    category: "feature",
+    description: "Add a note to your order, like extra hot or no sugar.",
+    requirements: ["A notes field at checkout", "The note shows on the order confirmation"],
+    acceptanceCriteria: ["The confirmation shows the note that was entered"],
+    complexity: "small",
+  },
+  carttotal: {
+    title: "Fix the cart total after removing an item",
+    category: "bug",
+    description: "Removing an item from the order doesn't lower the total.",
+    requirements: ["Subtotal, tax and total always match the items in the cart", "Removing a line subtracts its full cost"],
+    acceptanceCriteria: ["Add two items, remove one: the total equals the remaining item plus tax"],
+    complexity: "small",
+  },
   counter: {
     title: "Fix the completed-task counter",
     category: "bug",
@@ -52,6 +92,8 @@ const TEMPLATES: Record<string, Omit<TriagedProposal, "missingDetails">> = {
     complexity: "small",
   },
 };
+
+const CAFE_FIRST = ["diet", "search", "favorite", "notes"];
 
 function titleFromText(text: string, type: TriageFeedback["type"]): string {
   const t = text.trim().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
@@ -65,7 +107,11 @@ export function templateProposal(items: TriageFeedback[]): TriagedProposal {
   const joined = items.map((i) => i.text).join(" ");
   const c = [...concepts(joined)];
   const isBug = items.some((i) => i.type === "bug");
-  const key = isBug && c.includes("counter") ? "counter" : c.find((x) => TEMPLATES[x]);
+  // Specific bugs first, then café concepts (they beat generic words like "filter" → categories).
+  const key =
+    isBug && c.includes("cart") ? "carttotal"
+    : isBug && c.includes("counter") ? "counter"
+    : (CAFE_FIRST.find((x) => c.includes(x)) ?? c.find((x) => TEMPLATES[x]));
   const element = items.find((i) => i.elementLabel)?.elementLabel;
   if (key && TEMPLATES[key]) return { ...TEMPLATES[key]!, missingDetails: [] };
 

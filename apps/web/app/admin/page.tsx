@@ -12,7 +12,7 @@ export default async function AdminPage() {
     <AdminHome
       rooms={rooms.map((r) => ({ ...r, created_at: r.created_at.toISOString() }))}
       defaults={{
-        repo: process.env.DEMO_GITHUB_REPOSITORY ?? "johntestrun123-bot/crowdship-demo-taskboard",
+        repo: process.env.DEMO_GITHUB_REPOSITORY ?? "johntestrun123-bot/crowdship-demo-cafe",
         productionUrl: process.env.DEMO_PRODUCTION_URL ?? "",
         provider: (process.env.CODING_AGENT_PROVIDER as "mock" | "devin" | "claude_code_action") ?? "mock",
       }}

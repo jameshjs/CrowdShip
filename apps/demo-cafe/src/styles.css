@@ -1,0 +1,66 @@
+:root {
+  --bg: #fbf6ef;
+  --card: #ffffff;
+  --ink: #2b1d14;
+  --muted: #7a6656;
+  --line: #eadfd2;
+  --accent: #c2622d;
+  --accent-ink: #ffffff;
+  --chip: #f4eadf;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+* { box-sizing: border-box; }
+body { margin: 0; }
+button { font: inherit; cursor: pointer; }
+
+.page { max-width: 1080px; margin: 0 auto; padding: 20px 16px 220px; display: grid; gap: 16px; }
+@media (min-width: 900px) {
+  .page { grid-template-columns: 1fr 340px; grid-template-areas: "hero hero" "tabs cart" "menu cart"; align-items: start; padding-bottom: 40px; }
+  .hero { grid-area: hero; } .tabs { grid-area: tabs; } .menu { grid-area: menu; }
+  .cart { grid-area: cart; position: sticky !important; top: 20px; bottom: auto !important; }
+}
+
+.hero { padding: 22px 20px; border-radius: 22px; color: #fff6ec;
+  background: radial-gradient(120% 140% at 0% 0%, #6b3b1f 0%, #2b1d14 70%); }
+.eyebrow { margin: 0; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; opacity: .75; }
+.hero h1 { margin: 6px 0 4px; font-size: 34px; letter-spacing: -.02em; }
+.tagline { margin: 0; opacity: .85; }
+
+.tabs { display: flex; gap: 8px; overflow-x: auto; }
+.tab { border: 1px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 8px 16px; white-space: nowrap; }
+.tab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+.menu { display: grid; gap: 10px; }
+@media (min-width: 640px) { .menu { grid-template-columns: 1fr 1fr; } }
+.item { display: grid; grid-template-columns: 52px 1fr auto; gap: 12px; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 12px; }
+.emoji { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 14px; background: var(--chip); font-size: 28px; }
+.info h2 { margin: 0; font-size: 16px; }
+.info p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; list-style: none; padding: 0; margin: 6px 0 0; }
+.tags li { font-size: 11px; background: var(--chip); border-radius: 999px; padding: 2px 8px; color: var(--muted); }
+.buy { display: grid; justify-items: end; gap: 6px; }
+.price { font-weight: 700; }
+.add { border: 0; background: var(--accent); color: var(--accent-ink); border-radius: 10px; padding: 7px 14px; font-weight: 600; }
+
+.cart { position: fixed; left: 12px; right: 12px; bottom: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px 16px;
+  box-shadow: 0 18px 50px -18px rgba(43, 29, 20, .45); max-height: 46vh; overflow: auto; }
+.cart-head { display: flex; justify-content: space-between; align-items: baseline; }
+.cart-head h2 { margin: 0; font-size: 17px; }
+.count { color: var(--muted); font-size: 13px; }
+.empty { color: var(--muted); font-size: 14px; margin: 8px 0; }
+.lines { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; }
+.lines li { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: center; font-size: 14px; }
+.qty { display: inline-flex; align-items: center; gap: 8px; }
+.qty button { width: 28px; height: 28px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); }
+.remove { width: 28px; height: 28px; border: 0; background: transparent; color: var(--muted); font-size: 18px; }
+.sums { margin: 6px 0 10px; display: grid; gap: 2px; font-size: 14px; }
+.sums div { display: flex; justify-content: space-between; }
+.sums dt { color: var(--muted); } .sums dd { margin: 0; }
+.sums .total { font-weight: 700; font-size: 16px; } .sums .total dt { color: var(--ink); }
+.checkout { width: 100%; border: 0; border-radius: 12px; padding: 12px; background: var(--ink); color: #fff; font-weight: 700; }
+.checkout:disabled { opacity: .45; cursor: not-allowed; }
+
+.confirm { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; background: #eaf7ee; border: 1px solid #bfe5cb; color: #1e5b36; border-radius: 14px; padding: 12px 14px; }
+.confirm button { margin-left: auto; border: 0; background: #1e5b36; color: #fff; border-radius: 8px; padding: 6px 12px; }

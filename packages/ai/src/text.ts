@@ -7,7 +7,7 @@ const STOPWORDS = new Set(
 /** Map surface words to canonical concepts so "night", "white background" and "dark mode" meet. */
 const SYNONYMS: Record<string, string> = {
   dark: "darkmode", night: "darkmode", theme: "darkmode", black: "darkmode", bright: "darkmode", white: "darkmode", eyes: "darkmode", background: "darkmode", darkmode: "darkmode",
-  sort: "sort", sorting: "sort", order: "sort", reorder: "sort", alphabetical: "sort", arrange: "sort", newest: "sort", oldest: "sort",
+  sort: "sort", sorting: "sort", reorder: "sort", alphabetical: "sort", arrange: "sort", newest: "sort", oldest: "sort",
   progress: "progress", percent: "progress", percentage: "progress", bar: "progress", completion: "progress", done: "progress",
   category: "category", categories: "category", tag: "category", tags: "category", label: "category", labels: "category", group: "category", filter: "category", color: "category",
   shortcut: "shortcut", shortcuts: "shortcut", keyboard: "shortcut", hotkey: "shortcut", hotkeys: "shortcut", key: "shortcut", keys: "shortcut",
@@ -15,6 +15,12 @@ const SYNONYMS: Record<string, string> = {
   edit: "edit", rename: "edit",
   due: "duedate", deadline: "duedate", date: "duedate", reminder: "duedate",
   counter: "counter", count: "counter", counts: "counter", number: "counter", total: "counter",
+  // Café demo vocabulary.
+  vegan: "diet", vegetarian: "diet", gluten: "diet", dairy: "diet", lactose: "diet", allergy: "diet", allergies: "diet", allergen: "diet", dietary: "diet", diet: "diet",
+  search: "search", find: "search", lookup: "search", searching: "search",
+  favorite: "favorite", favourite: "favorite", favorites: "favorite", favourites: "favorite", usual: "favorite", star: "favorite",
+  note: "notes", notes: "notes", instructions: "notes", barista: "notes", special: "notes",
+  cart: "cart", basket: "cart", checkout: "cart",
   broken: "bug", bug: "bug", crash: "bug", wrong: "bug", error: "bug", fails: "bug", doesnt: "bug", work: "bug", working: "bug",
 };
 

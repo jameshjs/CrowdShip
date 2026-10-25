@@ -34,9 +34,13 @@ textarea:focus { outline: none; border-color: #9b8cf5; }
 .chip { display: inline-block; font-size: 12px; color: #c9b8ff; background: rgba(155, 140, 245, .16); border-radius: 999px; padding: 3px 10px; margin-bottom: 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .msg { font-size: 13px; margin-top: 8px; }
 .ok { color: #5fd6a4; } .err { color: #f8818f; }
-.bar { position: fixed; top: 0; left: 0; right: 0; z-index: 2147483647; display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding: calc(10px + env(safe-area-inset-top)) 14px 10px; background: rgba(30, 24, 56, .95); color: #f3f1fb; font-size: 14px; border-bottom: 1px solid rgba(150, 130, 230, .35); }
-.bar button { height: 36px; padding: 0 14px; border-radius: 10px; border: 1px solid rgba(150, 130, 230, .35); background: rgba(20, 15, 40, .7); color: #f3f1fb; cursor: pointer; }
+/* Compact pill at the bottom while selecting/circling, so the whole page stays visible (and circle-able). */
+.bar { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 2147483647;
+  display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 6px 6px 6px 14px; border-radius: 999px;
+  background: rgba(30, 24, 56, .88); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); color: #f3f1fb; font-size: 13px;
+  border: 1px solid rgba(150, 130, 230, .35); box-shadow: 0 10px 30px rgba(0,0,0,.35); white-space: nowrap; }
+.bar span { overflow: hidden; text-overflow: ellipsis; }
+.bar button { height: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: rgba(255,255,255,.12); color: #f3f1fb; cursor: pointer; font-size: 13px; }
 .hl { position: fixed; z-index: 2147483645; pointer-events: none; border: 2px solid #9b8cf5; background: rgba(155, 140, 245, .14); border-radius: 6px; transition: all .06s; }
 .draw { position: fixed; inset: 0; z-index: 2147483645; touch-action: none; cursor: crosshair; background: rgba(12, 8, 28, .18); }
 .draw svg { width: 100%; height: 100%; display: block; }
@@ -66,7 +70,7 @@ export function mountFeedbackWidget(opts: WidgetOptions): () => void {
 
     if (mode === "selecting") {
       const bar = el("div", "bar");
-      bar.append(el("span", "", "Tap the part of the app you want to comment on"));
+      bar.append(el("span", "", "Tap what you want to comment on"));
       const cancel = el("button", "", "Cancel");
       cancel.setAttribute("data-testid", "crowdship-cancel-select");
       cancel.onclick = () => stopSelecting();
@@ -87,7 +91,7 @@ export function mountFeedbackWidget(opts: WidgetOptions): () => void {
       draw.append(svg);
       attachDrawing(draw, path);
       const bar = el("div", "bar");
-      bar.append(el("span", "", "Circle the part of the screen you mean"));
+      bar.append(el("span", "", "Draw a circle around it"));
       const cancel = el("button", "", "Cancel");
       cancel.setAttribute("data-testid", "crowdship-cancel-circle");
       cancel.onclick = () => {

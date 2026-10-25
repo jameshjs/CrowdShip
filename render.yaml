@@ -1,6 +1,6 @@
 # Render Blueprint: CrowdShip web app + background worker.
 # Postgres + Realtime stay on hosted Supabase (apply supabase/migrations with `supabase db push`).
-# The demo task board is a separate Render Static Site from its own repo.
+# The demo café app is a separate Render Static Site from its own repo.
 services:
   - type: web
     name: crowdship-web
@@ -49,7 +49,7 @@ envVarGroups:
       - key: WIDGET_ALLOWED_ORIGINS
         sync: false
       - key: DEMO_GITHUB_REPOSITORY
-        value: johntestrun123-bot/crowdship-demo-taskboard
+        value: johntestrun123-bot/crowdship-demo-cafe
       - key: DEMO_PRODUCTION_URL
         sync: false
       - key: CODING_AGENT_PROVIDER
@@ -63,7 +63,7 @@ envVarGroups:
       - key: GITHUB_WEBHOOK_SECRET
         generateValue: true
       - key: MOCK_PR_URL
-        value: https://github.com/johntestrun123-bot/crowdship-demo-taskboard/pull/1
+        value: https://github.com/johntestrun123-bot/crowdship-demo-cafe/pull/1
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: TRIAGE_PROVIDER

@@ -46,8 +46,8 @@ export function AdminHome({ rooms, defaults }: { rooms: Room[]; defaults: { repo
   const router = useRouter();
   const [form, setForm] = useState({
     mode: "build" as "build" | "feedback",
-    projectName: "Event Task Board",
-    description: "A tiny collaborative task board. Tell us what it should do next.",
+    projectName: "Harbour Café",
+    description: "Order-ahead app for a little café. Tell us what it should do next.",
     githubRepository: defaults.repo,
     productionUrl: defaults.productionUrl,
     agentProvider: defaults.provider,

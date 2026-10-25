@@ -49,6 +49,19 @@ describe("deterministic triage", () => {
     expect(plan.create[0]!.proposal.title).toBe("Fix the completed-task counter");
   });
 
+  it("café demo: groups dietary requests and maps the cart bug to its fix", () => {
+    const plan = deterministicTriage(
+      [fb("1", "Can I filter for vegan options?"), fb("2", "Need a gluten free filter please"), fb("3", "Show me dairy-free drinks"),
+       fb("4", "Removing an item from the cart doesn't lower the total", "bug")],
+      [],
+    );
+    const diet = plan.create.find((c) => c.proposal.title === "Dietary filters");
+    expect(diet?.feedbackIds.sort()).toEqual(["1", "2", "3"]);
+    expect(plan.create.find((c) => c.feedbackIds.includes("4"))!.proposal.title).toBe("Fix the cart total after removing an item");
+    // "filter" alone no longer reads as task categories when a dietary word is present
+    expect(plan.create.some((c) => c.proposal.title === "Task categories")).toBe(false);
+  });
+
   it("similarity is symmetric and bounded", () => {
     const a = "dark mode please", b = "night theme";
     expect(similarity(a, b)).toBeCloseTo(similarity(b, a));

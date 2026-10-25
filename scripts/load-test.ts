@@ -77,7 +77,7 @@ async function main() {
     : [];
 
   // 3. Feedback concurrently.
-  const ideas = ["dark mode please", "sort tasks by date", "show a progress bar", "keyboard shortcuts", "categories for tasks"];
+  const ideas = ["dark mode please", "filter for vegan options", "search the menu", "save my favourite drink", "add a note for the barista"];
   const fb = await Promise.all(people.map((p, i) => p.req(`/api/rooms/${code}/feedback`, { type: "feature", text: ideas[i % ideas.length] })));
 
   // 4. Voting: everyone votes at once, then half change their vote.

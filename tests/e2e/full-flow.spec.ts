@@ -14,12 +14,12 @@ test("complete flow in labeled demo mode: feedback → vote → agent → PR →
   await user.getByTestId("join-button").click();
   await user.getByTestId("tab-feedback").click();
   await user.getByTestId("quick-feature").click();
-  await user.getByTestId("feedback-text").fill("Show a progress bar of how much is done");
+  await user.getByTestId("feedback-text").fill("Let me filter the menu for vegan and gluten free options");
   await user.getByTestId("feedback-submit").click();
   await expect(user.getByTestId("feedback-sent")).toBeVisible();
 
   const s = await adminState(org, code);
-  const progress = s.proposals.find((p: { title: string }) => p.title === "Show a progress bar");
+  const progress = s.proposals.find((p: { title: string }) => p.title === "Dietary filters");
   await act(org, code, { type: "start_voting", proposalIds: s.proposals.filter((p: { status: string }) => p.status === "approved").map((p: { id: string }) => p.id), durationSeconds: 60 });
   await user.getByTestId("tab-vote").click();
   const voted = user.waitForResponse((r) => r.url().endsWith("/vote") && r.ok());
@@ -66,5 +66,5 @@ test("complete flow in labeled demo mode: feedback → vote → agent → PR →
   await expect.poll(async () => (await adminState(org, code)).reviews.length).toBe(1);
 
   await act(org, code, { type: "complete_round" });
-  await expect(live.getByText("R1 · Show a progress bar · Completed")).toBeVisible();
+  await expect(live.getByText("R1 · Dietary filters · Completed")).toBeVisible();
 });
