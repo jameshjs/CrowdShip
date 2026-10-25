@@ -179,7 +179,7 @@ function RoundPanel({ s, now, act, busy }: { s: AdminState; now: number; act: Ac
                   <span className="flex-1">{p.title}</span>
                   {swiped ? (
                     <span className="text-xs tabular text-fg-subtle" data-testid="approval">
-                      👍 {approval(p.id).likes} · 👎 {approval(p.id).dislikes} · {Math.round((approval(p.id).likes / Math.max(1, approval(p.id).likes + approval(p.id).dislikes)) * 100)}%
+                      ▲ {approval(p.id).likes} · ▼ {approval(p.id).dislikes} · {Math.round((approval(p.id).likes / Math.max(1, approval(p.id).likes + approval(p.id).dislikes)) * 100)}%
                     </span>
                   ) : <span className="text-xs text-fg-subtle">{p.supporters}</span>}
                 </label>
@@ -332,7 +332,7 @@ function AgentPanel({ s, act, busy }: { s: AdminState; act: Act; busy: string | 
           {s.reviews.length > 0 && (
             <div className="space-y-2 border-t border-line pt-3">
               <p className="text-sm font-medium">Did this change improve the app?</p>
-              <p className="text-sm tabular" data-testid="review-summary">👍 {counts.yes} · 👎 {counts.no} · 🔧 {counts.needs_improvement}</p>
+              <p className="text-sm tabular" data-testid="review-summary">▲ {counts.yes} · ▼ {counts.no} · 🔧 {counts.needs_improvement}</p>
               <ul className="max-h-40 space-y-1 overflow-auto text-xs text-fg-muted">
                 {s.reviews.filter((r) => r.comment).map((r, i) => <li key={i}><span className="text-fg">{r.nickname}:</span> {r.comment}</li>)}
               </ul>

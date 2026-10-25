@@ -1,5 +1,5 @@
 import type { TriagedProposal } from "@crowdship/shared";
-import { clusterKey, concepts, similarity } from "./text";
+import { clusterKey, concepts, similarity, tokens } from "./text";
 import { AUTO_MERGE_THRESHOLD, REVIEW_THRESHOLD, type TriageFeedback, type TriagePlan, type TriageTarget } from "./types";
 
 const TEMPLATES: Record<string, Omit<TriagedProposal, "missingDetails">> = {
@@ -94,6 +94,7 @@ const TEMPLATES: Record<string, Omit<TriagedProposal, "missingDetails">> = {
 };
 
 const CAFE_FIRST = ["diet", "search", "favorite", "notes"];
+const BUG_TEMPLATES = new Set(["counter", "carttotal"]);
 
 function titleFromText(text: string, type: TriageFeedback["type"]): string {
   const t = text.trim().replace(/\s+/g, " ").replace(/[.!?]+$/, "");
@@ -107,11 +108,14 @@ export function templateProposal(items: TriageFeedback[]): TriagedProposal {
   const joined = items.map((i) => i.text).join(" ");
   const c = [...concepts(joined)];
   const isBug = items.some((i) => i.type === "bug");
+  // Circle/"general" feedback can still describe a bug ("…didn't go down"): treat bug words as a bug signal.
+  const bugLike = isBug || tokens(joined).includes("bug");
   // Specific bugs first, then café concepts (they beat generic words like "filter" → categories).
   const key =
-    isBug && c.includes("cart") ? "carttotal"
-    : isBug && c.includes("counter") ? "counter"
-    : (CAFE_FIRST.find((x) => c.includes(x)) ?? c.find((x) => TEMPLATES[x]));
+    // café: "cart"/price words, or "total" + "removed" in a bug report → the cart-total bug
+    bugLike && (c.includes("cart") || (c.includes("counter") && c.includes("delete"))) && !c.includes("progress") ? "carttotal"
+    : bugLike && c.includes("counter") ? "counter"
+    : (CAFE_FIRST.find((x) => c.includes(x)) ?? c.find((x) => TEMPLATES[x] && !BUG_TEMPLATES.has(x)));
   const element = items.find((i) => i.elementLabel)?.elementLabel;
   if (key && TEMPLATES[key]) return { ...TEMPLATES[key]!, missingDetails: [] };
 

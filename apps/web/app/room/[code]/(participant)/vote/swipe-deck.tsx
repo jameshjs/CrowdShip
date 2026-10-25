@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { animate, AnimatePresence, motion, useMotionValue, useTransform, type PanInfo } from "motion/react";
-import { Check, ThumbsDown, ThumbsUp, Users, X } from "lucide-react";
+import { Check, ArrowBigDown, ArrowBigUp, Users, X } from "lucide-react";
 import type { PublicProposal } from "@crowdship/shared";
 import { Badge } from "@/components/ui/badge";
 import { LocationPreview } from "@/components/location-preview";
@@ -13,7 +13,7 @@ import { useRoomCtx } from "../room-shell";
 const DECK_SIZE = 12;
 const THRESHOLD = 110;
 
-/** Ideas phase: swipe 👍/👎 on each approved idea. Approval shortlists the final vote. */
+/** Ideas phase: swipe ▲/▼ on each approved idea. Approval shortlists the final vote. */
 export function SwipeDeck() {
   const { state, setState, code, refetch } = useRoomCtx();
   const [error, setError] = useState<string | null>(null);
@@ -106,7 +106,7 @@ export function SwipeDeck() {
             role="status"
             data-testid="swipe-echo"
           >
-            {echo.liked ? "👍" : "👎"} You and <span className="font-semibold tabular">{echo.pct}%</span> of the room said {echo.liked ? "yes" : "no"} to &ldquo;{echo.title}&rdquo;
+            {echo.liked ? "▲" : "▼"} You and <span className="font-semibold tabular">{echo.pct}%</span> of the room said {echo.liked ? "yes" : "no"} to &ldquo;{echo.title}&rdquo;
           </motion.p>
         )}
       </AnimatePresence>
@@ -124,11 +124,11 @@ export function SwipeDeck() {
           <div className="grid grid-cols-2 gap-3">
             <button onClick={() => swipe(deck[0]!, false)} data-testid="swipe-no"
               className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-danger/40 bg-danger-soft text-danger font-semibold active:scale-[0.98]">
-              <ThumbsDown className="h-5 w-5" aria-hidden /> Not for me
+              <ArrowBigDown className="h-5 w-5" aria-hidden /> Not for me
             </button>
             <button onClick={() => swipe(deck[0]!, true)} data-testid="swipe-yes"
               className="flex h-14 items-center justify-center gap-2 rounded-2xl border border-success/40 bg-success-soft text-success font-semibold active:scale-[0.98]">
-              <ThumbsUp className="h-5 w-5" aria-hidden /> Yes please
+              <ArrowBigUp className="h-5 w-5" aria-hidden /> Yes please
             </button>
           </div>
         </>
@@ -185,12 +185,12 @@ function SwipeCard({ proposal: p, top, appUrl, onSwipe }: { proposal: PublicProp
       <motion.span style={{ opacity: no }} className="pointer-events-none absolute left-5 top-5 z-10 -rotate-12 rounded-lg border-2 border-danger px-2 py-0.5 text-lg font-black text-danger">NOPE</motion.span>
 
       <LocationPreview location={p.location} appUrl={appUrl} live={top} height={140} />
-      <div className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <h2 className="text-2xl font-bold leading-tight tracking-tight text-balance">{p.title}</h2>
         {p.description && <p className={cn("mt-2 text-fg-muted", p.quotes.length ? "line-clamp-2" : "line-clamp-4")}>{p.description}</p>}
         {p.quotes.length > 0 && (
           <ul className="mt-3 space-y-1.5" data-testid="card-quotes">
-            {p.quotes.map((q, i) => (
+            {p.quotes.slice(0, p.location ? 1 : 2).map((q, i) => (
               <li key={i} className="border-l-2 border-accent/50 pl-2.5 text-sm">
                 <span className="line-clamp-2 text-fg">&ldquo;{q.text}&rdquo;</span>
                 <span className="text-xs text-fg-subtle">{q.nickname}</span>
@@ -225,7 +225,7 @@ function SwipeSummary({ approved, mine, onFlip }: { approved: PublicProposal[]; 
                 {mine[p.id] ? <Check className="h-4 w-4" aria-label="Yes" /> : <X className="h-4 w-4" aria-label="No" />}
               </span>
               <span className="flex-1">{p.title}</span>
-              <span className="text-xs tabular text-fg-subtle">{p.approval.likes}👍</span>
+              <span className="text-xs tabular text-fg-subtle">{p.approval.likes}▲</span>
             </button>
           </li>
         ))}

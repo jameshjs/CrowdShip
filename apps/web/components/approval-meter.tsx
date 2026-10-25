@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 /**
- * Tug-of-war between 👎 and 👍: red pulls from the left, green from the right, and the seam
+ * Tug-of-war between ▼ and ▲: red pulls from the left, green from the right, and the seam
  * slides as swipes come in. With no swipes the seam rests in the middle.
  */
 export function ApprovalMeter({ likes, dislikes, large, className }: { likes: number; dislikes: number; large?: boolean; className?: string }) {
@@ -14,7 +14,7 @@ export function ApprovalMeter({ likes, dislikes, large, className }: { likes: nu
   return (
     <div className={cn("flex items-center gap-2", className)} aria-label={`${likes} yes, ${dislikes} no`} data-testid="approval-meter">
       <span className={cn("flex shrink-0 items-center gap-1 font-semibold tabular text-danger", large ? "w-16 text-xl" : "w-9 text-xs")}>
-        <ThumbsDown className={large ? "h-5 w-5" : "h-3.5 w-3.5"} aria-hidden /> {dislikes}
+        <ArrowBigDown className={large ? "h-5 w-5" : "h-3.5 w-3.5"} aria-hidden /> {dislikes}
       </span>
       <div className={cn("relative flex-1 overflow-hidden rounded-full bg-bg-sunken", large ? "h-4" : "h-2")}>
         <motion.div
@@ -37,7 +37,7 @@ export function ApprovalMeter({ likes, dislikes, large, className }: { likes: nu
         />
       </div>
       <span className={cn("flex shrink-0 items-center justify-end gap-1 font-semibold tabular text-success", large ? "w-16 text-xl" : "w-9 text-xs")}>
-        {likes} <ThumbsUp className={large ? "h-5 w-5" : "h-3.5 w-3.5"} aria-hidden />
+        {likes} <ArrowBigUp className={large ? "h-5 w-5" : "h-3.5 w-3.5"} aria-hidden />
       </span>
     </div>
   );

@@ -30,10 +30,10 @@ function rowsFor(state: PublicRoomState): Row[] {
       const agent = isWinner ? state.agent : null;
       if (p.status === "completed") return { p, stage: "ready", agentLabel: feedbackMode ? null : "Built by the agent", readyLabel: feedbackMode ? "Top pick · published" : "Shipped" };
       if (p.status === "review_ready" || (isWinner && state.round?.status === "review_ready")) {
-        return { p, stage: "ready", agentLabel: agent ? `${PROVIDER_LABELS[agent.provider]} · PR #${agent.prNumber ?? "?"}` : "Agent", readyLabel: agent?.previewReleased ? "Live for testers" : "Tested · ready for review" };
+        return { p, stage: "ready", agentLabel: agent ? `${agentName(agent.provider)}${agent.prNumber ? ` · PR #${agent.prNumber}` : " · draft PR"}` : "Agent", readyLabel: agent?.previewReleased ? "Live for testers" : "Tested · ready for review" };
       }
       if (["developing", "verifying"].includes(p.status) || (isWinner && ["developing", "verifying"].includes(state.round?.status ?? ""))) {
-        const label = agent ? `${PROVIDER_LABELS[agent.provider]} · ${state.round?.status === "verifying" ? "CI checks" : agentStateLabel[agent.state]}` : "Agent starting";
+        const label = agent ? `${agentName(agent.provider)} · ${state.round?.status === "verifying" ? "CI checks" : agentStateLabel[agent.state]}` : "Agent starting";
         return { p, stage: "agent", agentLabel: label, readyLabel: null };
       }
       return { p, stage: "idea", agentLabel: null, readyLabel: null };
@@ -121,7 +121,7 @@ export function IdeaTree({ code, qrSvg, joinUrl }: { code: string; qrSvg: string
                   <Node x={COL.idea} y={y} r={ideaR} color={C.purple} delay={i * 0.06} pulse={r.stage === "idea" && r.p.id === state.round?.winningProposalId} />
                   <text x={COL.idea + ideaR + 16} y={y - 4} fill="#f4f1fd" fontSize="21" fontWeight="600">{clip(r.p.title, 34)}</text>
                   <text x={COL.idea + ideaR + 16} y={y + 22} fill="#9a91c2" fontSize="15">
-                    {r.p.supporters} suggested{r.p.approval.likes + r.p.approval.dislikes ? ` · 👍 ${r.p.approval.likes} 👎 ${r.p.approval.dislikes}` : ""}{r.p.votes ? ` · ${r.p.votes} votes` : ""}
+                    {r.p.supporters} suggested{r.p.approval.likes + r.p.approval.dislikes ? ` · ▲ ${r.p.approval.likes} ▼ ${r.p.approval.dislikes}` : ""}{r.p.votes ? ` · ${r.p.votes} votes` : ""}
                   </text>
 
                   {r.stage !== "idea" && state.room.mode === "build" && r.agentLabel && (
@@ -130,7 +130,7 @@ export function IdeaTree({ code, qrSvg, joinUrl }: { code: string; qrSvg: string
                         initial={{ pathLength: 0 }} animate={{ pathLength: 1, strokeDashoffset: r.stage === "agent" ? [0, -36] : 0 }}
                         transition={{ pathLength: { duration: 0.9 }, strokeDashoffset: { duration: 1.2, repeat: Infinity, ease: "linear" } }} />
                       <Node x={COL.agent} y={y} r={22} color={C.blue} delay={0.4} pulse={r.stage === "agent"} icon="🤖" />
-                      <text x={COL.agent + 38} y={y + 6} fill="#cfe0ff" fontSize="17">{clip(r.agentLabel, 30)}</text>
+                      <text x={COL.agent + 38} y={y + 6} fill="#cfe0ff" fontSize="17">{clip(r.agentLabel, 22)}</text>
                     </>
                   )}
                   {r.stage === "ready" && r.readyLabel && (
@@ -176,5 +176,8 @@ function Legend({ color, title, sub, n }: { color: string; title: string; sub: s
     </li>
   );
 }
+
+/** Short provider name for the tree (the long labels would run into the next branch). */
+const agentName = (p: keyof typeof PROVIDER_LABELS) => PROVIDER_LABELS[p].replace(/ \(demo mode\)$/, "");
 
 const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);

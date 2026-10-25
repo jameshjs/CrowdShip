@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { Rocket, ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
+import { Rocket, ArrowBigDown, ArrowBigUp, Wrench } from "lucide-react";
 import { creditLine, type PublicRoomState } from "@crowdship/shared";
 import { Confetti } from "@/components/confetti";
 
@@ -35,8 +35,8 @@ export function ShippedBanner({ state }: { state: PublicRoomState }) {
         </p>
         <p className="mt-6 text-xl">It&apos;s live on your phone now. Try it and rate it.</p>
         <div className="mt-6 flex gap-6 text-3xl font-semibold tabular" aria-label="Preview ratings">
-          <span className="flex items-center gap-2"><ThumbsUp className="h-7 w-7 text-success" aria-hidden /> {yes}</span>
-          <span className="flex items-center gap-2"><ThumbsDown className="h-7 w-7 text-danger" aria-hidden /> {no}</span>
+          <span className="flex items-center gap-2"><ArrowBigUp className="h-7 w-7 text-success" aria-hidden /> {yes}</span>
+          <span className="flex items-center gap-2"><ArrowBigDown className="h-7 w-7 text-danger" aria-hidden /> {no}</span>
           <span className="flex items-center gap-2"><Wrench className="h-7 w-7 text-warn" aria-hidden /> {needs_improvement}</span>
         </div>
       </div>

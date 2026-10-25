@@ -73,7 +73,7 @@ test("swipe deck: swipe ideas, see where they apply, organizer gets the top 3 pr
   const console_ = await (await browser.newContext({ storageState: await org.storageState() })).newPage();
   await console_.goto(`/admin/${code}`);
   await expect(console_.getByTestId("start-voting")).toHaveText(/Start voting \(3\)/);
-  await expect(console_.getByTestId("approval").first()).toContainText("👍");
+  await expect(console_.getByTestId("approval").first()).toContainText("▲");
 
   // Live screen ranks by crowd approval before the vote.
   const live = await browser.newPage();

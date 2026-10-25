@@ -4,11 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { approvalScore, type PublicProposal } from "@crowdship/shared";
 import { ApprovalMeter } from "@/components/approval-meter";
+import { cn } from "@/lib/utils";
 
 type Bubble = { id: number; proposalId: string; liked: boolean; x: number };
 
 /**
- * Projector view of the swipe phase: every idea's 👎/👍 tug-of-war, re-ranked live, with a bubble
+ * Projector view of the swipe phase: every idea's ▼/▲ tug-of-war, re-ranked live, with a bubble
  * floating off the bar for each new swipe so the room can see the back-and-forth as it happens.
  */
 export function SwipeArena({ proposals }: { proposals: PublicProposal[] }) {
@@ -55,7 +56,7 @@ export function SwipeArena({ proposals }: { proposals: PublicProposal[] }) {
                   {bubbles.filter((b) => b.proposalId === p.id).map((b) => (
                     <motion.span
                       key={b.id}
-                      className="pointer-events-none absolute bottom-2 text-3xl"
+                      className={cn("pointer-events-none absolute bottom-2 text-4xl font-black drop-shadow", b.liked ? "text-success" : "text-danger")}
                       style={b.liked ? { right: `${4 + b.x}%` } : { left: `${4 + b.x}%` }}
                       initial={{ y: 0, opacity: 0, scale: 0.6 }}
                       animate={{ y: -70, opacity: [0, 1, 1, 0], scale: [0.6, 1.2, 1, 0.9] }}
@@ -63,7 +64,7 @@ export function SwipeArena({ proposals }: { proposals: PublicProposal[] }) {
                       transition={{ duration: 1.6, ease: "easeOut" }}
                       aria-hidden
                     >
-                      {b.liked ? "👍" : "👎"}
+                      {b.liked ? "▲" : "▼"}
                     </motion.span>
                   ))}
                 </AnimatePresence>

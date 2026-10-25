@@ -11,7 +11,7 @@ const SYNONYMS: Record<string, string> = {
   progress: "progress", percent: "progress", percentage: "progress", bar: "progress", completion: "progress", done: "progress",
   category: "category", categories: "category", tag: "category", tags: "category", label: "category", labels: "category", group: "category", filter: "category", color: "category",
   shortcut: "shortcut", shortcuts: "shortcut", keyboard: "shortcut", hotkey: "shortcut", hotkeys: "shortcut", key: "shortcut", keys: "shortcut",
-  delete: "delete", remove: "delete", trash: "delete",
+  delete: "delete", remove: "delete", removed: "delete", removing: "delete", trash: "delete",
   edit: "edit", rename: "edit",
   due: "duedate", deadline: "duedate", date: "duedate", reminder: "duedate",
   counter: "counter", count: "counter", counts: "counter", number: "counter", total: "counter",
@@ -20,8 +20,8 @@ const SYNONYMS: Record<string, string> = {
   search: "search", find: "search", lookup: "search", searching: "search",
   favorite: "favorite", favourite: "favorite", favorites: "favorite", favourites: "favorite", usual: "favorite", star: "favorite",
   note: "notes", notes: "notes", instructions: "notes", barista: "notes", special: "notes",
-  cart: "cart", basket: "cart", checkout: "cart",
-  broken: "bug", bug: "bug", crash: "bug", wrong: "bug", error: "bug", fails: "bug", doesnt: "bug", work: "bug", working: "bug",
+  cart: "cart", basket: "cart", checkout: "cart", price: "cart", charged: "cart", charge: "cart", paid: "cart", subtotal: "cart",
+  broken: "bug", bug: "bug", crash: "bug", wrong: "bug", error: "bug", fails: "bug", doesnt: "bug", didnt: "bug", isnt: "bug", wont: "bug", work: "bug", working: "bug",
 };
 
 export function normalize(text: string): string {

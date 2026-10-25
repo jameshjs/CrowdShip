@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ThumbsDown, ThumbsUp, Wrench } from "lucide-react";
+import { ArrowBigDown, ArrowBigUp, Wrench } from "lucide-react";
 import type { PreviewRating } from "@crowdship/shared";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,8 +11,8 @@ import { api } from "@/lib/client/api";
 import { cn } from "@/lib/utils";
 
 const OPTIONS: { value: PreviewRating; label: string; icon: React.ElementType }[] = [
-  { value: "yes", label: "Yes", icon: ThumbsUp },
-  { value: "no", label: "No", icon: ThumbsDown },
+  { value: "yes", label: "Yes", icon: ArrowBigUp },
+  { value: "no", label: "No", icon: ArrowBigDown },
   { value: "needs_improvement", label: "Needs work", icon: Wrench },
 ];
 

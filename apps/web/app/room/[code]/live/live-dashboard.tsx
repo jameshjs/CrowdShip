@@ -174,7 +174,7 @@ export function LiveDashboard({ code, qrSvg, joinUrl }: { code: string; qrSvg: s
                   <span className="flex-1">{agent.previewReleased ? "Preview available. Try version B on your phone!" : "Preview not released"}</span>
                   {totalReviews > 0 && (
                     <span className="flex items-center gap-3 text-sm tabular">
-                      <Star className="h-4 w-4 text-warn" /> 👍 {state.reviews.yes} · 👎 {state.reviews.no} · 🔧 {state.reviews.needs_improvement}
+                      <Star className="h-4 w-4 text-warn" /> ▲ {state.reviews.yes} · ▼ {state.reviews.no} · 🔧 {state.reviews.needs_improvement}
                     </span>
                   )}
                 </div>

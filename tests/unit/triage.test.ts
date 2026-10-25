@@ -58,6 +58,13 @@ describe("deterministic triage", () => {
     const diet = plan.create.find((c) => c.proposal.title === "Dietary filters");
     expect(diet?.feedbackIds.sort()).toEqual(["1", "2", "3"]);
     expect(plan.create.find((c) => c.feedbackIds.includes("4"))!.proposal.title).toBe("Fix the cart total after removing an item");
+    const total = deterministicTriage([fb("5", "I removed the croissant but the total didn't go down", "bug")], []);
+    expect(total.create[0]!.proposal.title).toBe("Fix the cart total after removing an item");
+    // Circled feedback arrives as "general" but still reads as a bug
+    const circled = deterministicTriage([{ ...fb("6", "I removed the croissant but the total didn't go down", "general"), elementLabel: "Circled area: Subtotal, Tax, Total" }], []);
+    expect(circled.create[0]!.proposal.title).toBe("Fix the cart total after removing an item");
+    // A non-bug never gets a bug template
+    expect(deterministicTriage([fb("7", "Show the total number of tasks")], []).create[0]!.proposal.title).not.toMatch(/^Fix/);
     // "filter" alone no longer reads as task categories when a dietary word is present
     expect(plan.create.some((c) => c.proposal.title === "Task categories")).toBe(false);
   });
