@@ -1,0 +1,70 @@
+# Render Blueprint: CrowdShip web app + background worker.
+# Postgres + Realtime stay on hosted Supabase (apply supabase/migrations with `supabase db push`).
+# The demo task board is a separate Render Static Site from its own repo.
+services:
+  - type: web
+    name: crowdship-web
+    runtime: node
+    plan: starter # free plan sleeps when idle; the first phones to scan would wait ~30s
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @crowdship/web build
+    startCommand: cd apps/web && npx next start -p $PORT
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - fromGroup: crowdship-shared
+
+  - type: worker
+    name: crowdship-worker
+    runtime: node
+    plan: starter
+    numInstances: 1 # keeps coding-agent launches strictly serialized
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --filter @crowdship/worker...
+    startCommand: cd apps/worker && npx tsx src/index.ts
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - fromGroup: crowdship-shared
+
+envVarGroups:
+  - name: crowdship-shared
+    envVars:
+      # Supabase session pooler URL (port 5432): the worker relies on FOR UPDATE SKIP LOCKED.
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ORGANIZER_PASSWORD
+        sync: false
+      # e.g. https://crowdship-web.onrender.com
+      - key: PUBLIC_URL
+        sync: false
+      # e.g. https://crowdship-demo.onrender.com,https://crowdship-demo-pr-*.onrender.com
+      - key: WIDGET_ALLOWED_ORIGINS
+        sync: false
+      - key: DEMO_GITHUB_REPOSITORY
+        value: johntestrun123-bot/crowdship-demo-taskboard
+      - key: DEMO_PRODUCTION_URL
+        sync: false
+      - key: CODING_AGENT_PROVIDER
+        value: devin
+      - key: DEVIN_API_KEY
+        sync: false
+      - key: DEVIN_ORG_ID
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        generateValue: true
+      - key: MOCK_PR_URL
+        value: https://github.com/johntestrun123-bot/crowdship-demo-taskboard/pull/1
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: TRIAGE_PROVIDER
+        value: anthropic
